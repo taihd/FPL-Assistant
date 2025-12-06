@@ -1,0 +1,247 @@
+import type {
+  BootstrapData,
+  Fixture,
+  ManagerInfo,
+  ManagerHistory,
+  ManagerTransfer,
+} from '@/types/fpl';
+import { getCachedData, setCachedData, CACHE_KEYS } from '@/lib/cache';
+
+export type {
+  BootstrapData,
+  Fixture,
+  Team,
+  Event,
+  Player,
+  ElementType,
+  ManagerInfo,
+  ManagerHistory,
+  ManagerTransfer,
+} from '@/types/fpl';
+
+// Use proxy in development, direct URL in production
+const BASE_URL =
+  import.meta.env.DEV
+    ? '/api/fpl'
+    : 'https://fantasy.premierleague.com/api';
+
+// Cache TTLs (in milliseconds)
+const CACHE_TTL = {
+  BOOTSTRAP: 10 * 60 * 1000, // 10 minutes (changes less frequently)
+  FIXTURES: 5 * 60 * 1000, // 5 minutes
+  MANAGER: 2 * 60 * 1000, // 2 minutes
+  PLAYER: 5 * 60 * 1000, // 5 minutes
+} as const;
+
+export async function getBootstrapData(): Promise<BootstrapData> {
+  // Check cache first
+  const cached = getCachedData<BootstrapData>(CACHE_KEYS.BOOTSTRAP);
+  if (cached) {
+    return cached;
+  }
+
+  try {
+    const response = await fetch(`${BASE_URL}/bootstrap-static/`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch bootstrap data: ${response.status} ${response.statusText}`
+      );
+    }
+
+    const data = await response.json() as BootstrapData;
+    // Cache the data
+    setCachedData(CACHE_KEYS.BOOTSTRAP, data, CACHE_TTL.BOOTSTRAP);
+    return data;
+  } catch (error) {
+    console.error('API Error (getBootstrapData):', error);
+    
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      throw new Error(
+        'Network error: Unable to connect to FPL API. Please check your internet connection or try again later.'
+      );
+    }
+    
+    if (error instanceof Error) {
+      throw error;
+    }
+    
+    throw new Error('An unknown error occurred while fetching bootstrap data');
+  }
+}
+
+export async function getFixtures(): Promise<Fixture[]> {
+  // Check cache first
+  const cached = getCachedData<Fixture[]>(CACHE_KEYS.FIXTURES);
+  if (cached) {
+    return cached;
+  }
+
+  try {
+    const response = await fetch(`${BASE_URL}/fixtures/`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch fixtures: ${response.status} ${response.statusText}`
+      );
+    }
+
+    const data = await response.json() as Fixture[];
+    // Cache the data
+    setCachedData(CACHE_KEYS.FIXTURES, data, CACHE_TTL.FIXTURES);
+    return data;
+  } catch (error) {
+    console.error('API Error (getFixtures):', error);
+    
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      throw new Error(
+        'Network error: Unable to connect to FPL API. Please check your internet connection or try again later.'
+      );
+    }
+    
+    if (error instanceof Error) {
+      throw error;
+    }
+    
+    throw new Error('An unknown error occurred while fetching fixtures');
+  }
+}
+
+export interface PlayerSummary {
+  id: number;
+  history: unknown[];
+  history_past: unknown[];
+  fixtures: unknown[];
+}
+
+export async function getPlayerSummary(id: number): Promise<PlayerSummary> {
+  // Check cache first
+  const cached = getCachedData<PlayerSummary>(CACHE_KEYS.PLAYER_SUMMARY(id));
+  if (cached) {
+    return cached;
+  }
+
+  try {
+    const response = await fetch(`${BASE_URL}/element-summary/${id}/`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    if (!response.ok) {
+      throw new Error(`Failed to fetch player summary for id ${id}`);
+    }
+    const data = await response.json() as PlayerSummary;
+    // Cache the data
+    setCachedData(CACHE_KEYS.PLAYER_SUMMARY(id), data, CACHE_TTL.PLAYER);
+    return data;
+  } catch (error) {
+    console.error('API Error:', error);
+    throw error;
+  }
+}
+
+export async function getManagerInfo(id: number): Promise<ManagerInfo> {
+  // Check cache first
+  const cached = getCachedData<ManagerInfo>(CACHE_KEYS.MANAGER_INFO(id));
+  if (cached) {
+    return cached;
+  }
+
+  try {
+    const response = await fetch(`${BASE_URL}/entry/${id}/`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    if (!response.ok) {
+      throw new Error(`Failed to fetch manager info for id ${id}`);
+    }
+    const data = await response.json() as ManagerInfo;
+    // Cache the data
+    setCachedData(CACHE_KEYS.MANAGER_INFO(id), data, CACHE_TTL.MANAGER);
+    return data;
+  } catch (error) {
+    console.error('API Error:', error);
+    throw error;
+  }
+}
+
+export async function getManagerHistory(id: number): Promise<ManagerHistory> {
+  // Check cache first
+  const cached = getCachedData<ManagerHistory>(CACHE_KEYS.MANAGER_HISTORY(id));
+  if (cached) {
+    return cached;
+  }
+
+  try {
+    const response = await fetch(`${BASE_URL}/entry/${id}/history/`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    if (!response.ok) {
+      throw new Error(`Failed to fetch manager history for id ${id}`);
+    }
+    const data = await response.json() as ManagerHistory;
+    // Cache the data
+    setCachedData(CACHE_KEYS.MANAGER_HISTORY(id), data, CACHE_TTL.MANAGER);
+    return data;
+  } catch (error) {
+    console.error('API Error:', error);
+    throw error;
+  }
+}
+
+export async function getManagerTransfers(id: number): Promise<ManagerTransfer[]> {
+  // Check cache first
+  const cached = getCachedData<ManagerTransfer[]>(CACHE_KEYS.MANAGER_TRANSFERS(id));
+  if (cached) {
+    return cached;
+  }
+
+  try {
+    const response = await fetch(`${BASE_URL}/entry/${id}/transfers/`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    if (!response.ok) {
+      throw new Error(`Failed to fetch manager transfers for id ${id}`);
+    }
+    const data = await response.json() as ManagerTransfer[];
+    // Cache the data
+    setCachedData(CACHE_KEYS.MANAGER_TRANSFERS(id), data, CACHE_TTL.MANAGER);
+    return data;
+  } catch (error) {
+    console.error('API Error:', error);
+    throw error;
+  }
+}
+
+export async function getLeagueStandings(id: number): Promise<unknown> {
+  try {
+    const response = await fetch(`${BASE_URL}/leagues-classic/${id}/standings/`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch league standings for id ${id}`);
+    }
+    return response.json();
+  } catch (error) {
+    console.error('API Error:', error);
+    throw error;
+  }
+}
+

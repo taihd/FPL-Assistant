@@ -1,0 +1,559 @@
+---
+description: Fantasy Premier League AI Assistant - React, TypeScript, TailwindCSS best practices
+globs:
+  - "**/*.tsx"
+  - "**/*.ts"
+  - "**/*.css"
+alwaysApply: true
+---
+
+# FPL Assistant - Cursor Rules
+
+## Project Overview
+
+AI-powered Fantasy Premier League web app with context-aware assistant.
+
+**Tech Stack:**
+- React 18+ with TypeScript (strict mode)
+- TailwindCSS + shadcn/ui
+- React Router v6
+- Recharts for visualizations
+- Google Gemini / OpenAI for AI features
+- FPL Public API
+
+**Core Modules:** Fixtures, Clubs, Players, Managers, Leagues, AI Assistant
+
+---
+
+## Code Style & Standards
+
+### TypeScript Rules
+
+**Always:**
+- Use strict mode (`"strict": true` in tsconfig)
+- Define explicit return types for functions
+- Use `interface` for object shapes (prefer over `type`)
+- Leverage optional chaining (`?.`) and nullish coalescing (`??`)
+
+**Never:**
+- Use `any` (use `unknown` if type is truly unknown)
+- Skip error handling in async functions
+- Leave unused imports or variables
+
+```typescript
+// ✅ Good
+interface Player {
+  id: number;
+  name: string;
+  points: number;
+}
+
+async function fetchPlayer(id: number): Promise<Player> {
+  const response = await fetch(`${API_URL}/player/${id}`);
+  if (!response.ok) throw new Error('Failed to fetch player');
+  return response.json();
+}
+
+// ❌ Bad
+const fetchPlayer = async (id) => {
+  return fetch(`${API_URL}/player/${id}`).then(r => r.json());
+}
+```
+
+---
+
+## React Patterns
+
+### Component Structure
+
+Follow this exact order in every component:
+
+```tsx
+// 1. External imports
+import { useState, useEffect } from 'react';
+import { Card, CardHeader, CardTitle } from '@/components/ui/card';
+
+// 2. Internal imports
+import { useFPLApi } from '@/hooks/useFPLApi';
+import type { Player } from '@/types';
+
+// 3. Interface/Type definitions
+interface PlayerCardProps {
+  playerId: number;
+  onSelect?: (id: number) => void;
+}
+
+// 4. Component
+export function PlayerCard({ playerId, onSelect }: PlayerCardProps) {
+  // 4a. Hooks (state, context, custom hooks)
+  const [loading, setLoading] = useState(false);
+  const { fetchPlayer } = useFPLApi();
+  
+  // 4b. Effects
+  useEffect(() => {
+    setLoading(true);
+    fetchPlayer(playerId)
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [playerId]);
+  
+  // 4c. Event handlers
+  const handleClick = () => onSelect?.(playerId);
+  
+  // 4d. Early returns
+  if (loading) return <div>Loading...</div>;
+  
+  // 4e. Render
+  return <Card onClick={handleClick}>...</Card>;
+}
+```
+
+### Component Guidelines
+
+- **Functional components only** (no class components)
+- Keep components **under 200 lines** (extract logic to hooks)
+- Use custom hooks for reusable logic (prefix with `use`)
+- Prefer composition over prop drilling (use Context for 3+ levels)
+- Extract repeated JSX to separate components
+
+---
+
+## File Naming & Organization
+
+```
+src/
+├── components/       # Reusable UI (PascalCase.tsx)
+├── modules/         # Feature modules (PascalCase.tsx)
+├── hooks/           # Custom hooks (useCamelCase.ts)
+├── context/         # React Context (PascalCase.tsx)
+├── services/        # API/AI services (camelCase.ts)
+├── types/           # TypeScript types (camelCase.ts)
+└── lib/             # Third-party configs
+```
+
+**Naming Conventions:**
+- Components: `PlayerCard.tsx`
+- Hooks: `useFPLApi.ts`
+- Services: `api.ts`, `aiAgent.ts`
+- Types: `player.ts` or inline interfaces
+
+---
+
+## API Integration
+
+### Service Layer Pattern
+
+All API calls must go through `src/services/api.ts`:
+
+```typescript
+// src/services/api.ts
+const BASE_URL = 'https://fantasy.premierleague.com/api';
+
+export async function getBootstrapData(): Promise<BootstrapData> {
+  try {
+    const response = await fetch(`${BASE_URL}/bootstrap-static/`);
+    if (!response.ok) throw new Error('Failed to fetch bootstrap data');
+    return response.json();
+  } catch (error) {
+    console.error('API Error:', error);
+    throw error;
+  }
+}
+```
+
+**Required Patterns:**
+- Use `async/await` (never `.then()` chains)
+- Wrap all API calls in `try-catch`
+- Return typed data with explicit `Promise<Type>`
+- Throw errors with descriptive messages
+- Log errors to console for debugging
+
+### Data Fetching in Components
+
+Use custom hooks to encapsulate API logic:
+
+```typescript
+// ✅ Good - Logic in custom hook
+export function useFPLApi() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+  
+  const fetchPlayer = async (id: number) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await getPlayerSummary(id);
+      return data;
+    } catch (err) {
+      setError(err as Error);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  return { fetchPlayer, loading, error };
+}
+
+// ❌ Bad - API calls directly in component
+function PlayerCard() {
+  useEffect(() => {
+    fetch('https://...').then(r => r.json()).then(setData);
+  }, []);
+}
+```
+
+---
+
+## Styling with TailwindCSS
+
+### Rules
+
+- Use **only Tailwind utility classes** (no inline styles, no custom CSS)
+- Group utilities logically: layout → spacing → colors → typography
+- Use responsive modifiers: `md:`, `lg:`, `xl:`
+- Use Tailwind's color palette (no hardcoded hex)
+- Mobile-first approach (base = mobile, add breakpoints up)
+
+```tsx
+// ✅ Good
+<div className="flex flex-col gap-4 p-6 bg-slate-100 rounded-lg md:flex-row md:gap-6">
+  <h2 className="text-xl font-semibold text-slate-900">Player Stats</h2>
+</div>
+
+// ❌ Bad
+<div style={{ display: 'flex', padding: '24px', backgroundColor: '#f1f5f9' }}>
+  <h2 style={{ fontSize: '20px' }}>Player Stats</h2>
+</div>
+```
+
+### shadcn/ui Components
+
+- Import only components you need
+- Customize through Tailwind classes (not props when possible)
+- Follow shadcn composition patterns
+- Use variants provided by shadcn
+
+```tsx
+import { Button } from '@/components/ui/button';
+
+// ✅ Use variants
+<Button variant="outline" size="sm">View Details</Button>
+
+// ✅ Extend with Tailwind
+<Button className="bg-blue-600 hover:bg-blue-700">Submit</Button>
+```
+
+---
+
+## State Management
+
+### Local State
+
+```typescript
+// Simple state
+const [count, setCount] = useState(0);
+
+// Complex state - use useReducer
+const [state, dispatch] = useReducer(reducer, initialState);
+```
+
+### Global State (Context)
+
+Use Context **only** for truly global data:
+
+```typescript
+// src/context/AppContext.tsx
+interface AppContextType {
+  screen: string;
+  entityId: number | null;
+  dataSnapshot: unknown;
+  setScreen: (screen: string) => void;
+  setEntityId: (id: number | null) => void;
+  setDataSnapshot: (data: unknown) => void;
+}
+
+export const AppContext = createContext<AppContextType | null>(null);
+
+export function useAppContext() {
+  const context = useContext(AppContext);
+  if (!context) throw new Error('useAppContext must be used within AppProvider');
+  return context;
+}
+```
+
+**Context Best Practices:**
+- One context per concern (don't dump everything into one)
+- Provide type-safe hooks (`useAppContext`, not raw `useContext`)
+- Update context sparingly (only when screen/entity changes)
+
+### AI Context Sync
+
+Update context when user navigates to new screens:
+
+```typescript
+useEffect(() => {
+  setScreen('player');
+  setEntityId(playerId);
+  
+  fetchPlayerData(playerId).then(data => {
+    setDataSnapshot(data);
+  });
+}, [playerId]);
+```
+
+---
+
+## AI Integration
+
+### Prompt Engineering
+
+Structure prompts to provide clear context:
+
+```typescript
+const prompt = `
+You are an expert Fantasy Premier League assistant.
+
+Current Context:
+- Screen: ${screen}
+- Entity: ${entityId}
+- Data: ${JSON.stringify(dataSnapshot).slice(0, 4000)}
+
+User Question: ${userQuestion}
+
+Provide a concise, accurate answer based on the context above.
+`;
+```
+
+**Guidelines:**
+- Limit data snapshot to ~4000 chars (avoid token limits)
+- Always include: screen name, entity ID, relevant data
+- Keep prompts structured and consistent
+- Handle streaming responses if API supports it
+
+### Error Handling
+
+```typescript
+async function askAssistant(question: string) {
+  try {
+    const response = await fetch('https://api.openai.com/...', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ /* ... */ }),
+    });
+    
+    if (!response.ok) throw new Error('AI request failed');
+    
+    return response.json();
+  } catch (error) {
+    console.error('AI Error:', error);
+    return { error: 'Unable to get AI response. Please try again.' };
+  }
+}
+```
+
+---
+
+## Performance Optimization
+
+### Memoization
+
+```typescript
+// Memoize expensive calculations
+const sortedPlayers = useMemo(() => 
+  players.sort((a, b) => b.points - a.points),
+  [players]
+);
+
+// Memoize callbacks passed to child components
+const handleSelect = useCallback((id: number) => {
+  setSelected(id);
+}, []);
+
+// Memoize components
+export const PlayerCard = React.memo(({ player }) => {
+  return <Card>...</Card>;
+});
+```
+
+### Code Splitting
+
+```typescript
+// Lazy load routes
+const ManagerPage = lazy(() => import('./modules/Managers/ManagerPage'));
+
+// Wrap in Suspense
+<Suspense fallback={<LoadingSpinner />}>
+  <ManagerPage />
+</Suspense>
+```
+
+### Data Loading
+
+- Show skeleton loaders during fetch
+- Debounce search inputs (use `lodash.debounce` or custom hook)
+- Cache API responses in memory or localStorage
+- Paginate large lists (50-100 items per page)
+
+---
+
+## Error Handling
+
+### User-Facing Errors
+
+Always provide friendly error messages:
+
+```typescript
+try {
+  const data = await fetchPlayer(id);
+  setPlayer(data);
+} catch (error) {
+  console.error('Error loading player:', error);
+  toast.error('Unable to load player. Please try again.');
+}
+```
+
+**Error Handling Checklist:**
+- ✅ Wrap async operations in try-catch
+- ✅ Log errors to console (for debugging)
+- ✅ Show user-friendly error messages
+- ✅ Provide retry mechanisms
+- ✅ Handle network failures gracefully
+
+---
+
+## Accessibility
+
+- Use semantic HTML (`<button>`, `<nav>`, `<main>`, `<article>`)
+- Add `alt` text to all images
+- Ensure keyboard navigation works (test with Tab key)
+- Use ARIA labels for interactive elements
+- Maintain WCAG AA color contrast (4.5:1 for text)
+
+```tsx
+// ✅ Good
+<button 
+  onClick={handleClick}
+  aria-label="View player details"
+  className="px-4 py-2 bg-blue-600 text-white rounded"
+>
+  View Details
+</button>
+
+// ❌ Bad
+<div onClick={handleClick}>View Details</div>
+```
+
+---
+
+## Environment Variables
+
+Use Vite's environment variable system:
+
+```env
+# .env
+VITE_GEMINI_API_KEY=your_api_key_here
+VITE_OPENAI_API_KEY=your_api_key_here
+```
+
+Access in code:
+
+```typescript
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+```
+
+---
+
+## Best Practices Summary
+
+### Do ✅
+
+- Write type-safe code with explicit types
+- Extract logic to custom hooks
+- Handle all async errors with try-catch
+- Show loading and error states
+- Use Tailwind utilities (no inline styles)
+- Keep components under 200 lines
+- Update AI context when screen changes
+- Test keyboard navigation
+- Use semantic HTML
+- Debounce user inputs
+
+### Don't ❌
+
+- Use `any` type without justification
+- Make API calls directly in components
+- Skip error handling
+- Use inline styles or custom CSS
+- Create deeply nested components (>3 levels)
+- Prop drill more than 2 levels (use Context)
+- Forget loading indicators
+- Hardcode API URLs outside services
+- Mix data fetching with UI logic
+
+---
+
+## Code Review Checklist
+
+Before committing, verify:
+
+- [ ] TypeScript strict mode passes (no errors)
+- [ ] All async operations have error handling
+- [ ] Loading states are shown during data fetch
+- [ ] Components are under 200 lines
+- [ ] API calls go through service layer
+- [ ] No `any` types (use proper types)
+- [ ] No inline styles (Tailwind only)
+- [ ] Mobile responsive (test at 375px width)
+- [ ] Keyboard navigation works
+- [ ] Console has no errors/warnings
+
+---
+
+## Git Commit Conventions
+
+Use conventional commits:
+
+```
+feat: add player comparison feature
+fix: resolve fixture date parsing bug
+refactor: extract API logic to service layer
+docs: update README with setup instructions
+chore: update dependencies
+```
+
+**Format:** `<type>: <description>`
+
+**Types:** `feat`, `fix`, `refactor`, `docs`, `chore`, `style`, `test`
+
+---
+
+## Additional Guidelines
+
+### When Generating Code
+
+- Start with the simplest solution that works
+- Extract complexity to hooks/utilities
+- Prioritize readability over cleverness
+- Add comments only for complex logic (code should be self-documenting)
+- Follow the patterns established in existing code
+
+### When Refactoring
+
+- Change one thing at a time
+- Ensure tests pass (if available)
+- Keep commits focused and atomic
+- Update related documentation
+
+### When Stuck
+
+- Check existing code for similar patterns
+- Review official docs (React, TypeScript, TailwindCSS)
+- Search for solutions in project issues/PRs
+- Ask specific questions with context
+
+---
+
+**Note:** These rules ensure consistency, maintainability, and high code quality. Follow them closely for best results with Cursor AI assistance.---
+alwaysApply: true
+---
