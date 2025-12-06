@@ -8,6 +8,7 @@ const navigation = [
   { name: 'Players', href: '/players' },
   { name: 'Managers', href: '/managers' },
   { name: 'Leagues', href: '/leagues' },
+  { name: 'My Team', href: '/my-team' },
 ];
 
 export function Navbar() {

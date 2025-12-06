@@ -5,6 +5,7 @@ import type {
   ManagerHistory,
   ManagerTransfer,
 } from '@/types/fpl';
+import type { PlayerSummary } from '@/types/player';
 import { getCachedData, setCachedData, CACHE_KEYS } from '@/lib/cache';
 
 export type {
@@ -117,12 +118,7 @@ export async function getFixtures(): Promise<Fixture[]> {
   }
 }
 
-export interface PlayerSummary {
-  id: number;
-  history: unknown[];
-  history_past: unknown[];
-  fixtures: unknown[];
-}
+export type { PlayerSummary, PlayerHistory, PlayerFixture } from '@/types/player';
 
 export async function getPlayerSummary(id: number): Promise<PlayerSummary> {
   // Check cache first
@@ -242,6 +238,86 @@ export async function getLeagueStandings(id: number): Promise<unknown> {
   } catch (error) {
     console.error('API Error:', error);
     throw error;
+  }
+}
+
+export interface TeamPicks {
+  active_chip: string | null;
+  automatic_subs: Array<{
+    entry: number;
+    element_in: number;
+    element_out: number;
+    event: number;
+  }>;
+  entry_history: {
+    event: number;
+    points: number;
+    total_points: number;
+    rank: number;
+    rank_sort: number;
+    overall_rank: number;
+    bank: number;
+    value: number;
+    event_transfers: number;
+    event_transfers_cost: number;
+    points_on_bench: number;
+  };
+  picks: Array<{
+    element: number; // Player ID
+    position: number; // Position in team (1-15)
+    is_captain: boolean;
+    is_vice_captain: boolean;
+    multiplier: number;
+  }>;
+}
+
+/**
+ * Get team picks for a specific manager and gameweek
+ */
+export async function getTeamPicks(managerId: number, gameweek: number): Promise<TeamPicks> {
+  if (!gameweek || gameweek <= 0 || isNaN(gameweek)) {
+    throw new Error(`Invalid gameweek: ${gameweek}. Please ensure the current gameweek is available.`);
+  }
+
+  // Check cache first
+  const cacheKey = `team_picks_${managerId}_${gameweek}`;
+  const cached = getCachedData<TeamPicks>(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
+  try {
+    const response = await fetch(`${BASE_URL}/entry/${managerId}/event/${gameweek}/picks/`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch team picks for manager ${managerId}, gameweek ${gameweek}: ${response.status} ${response.statusText}`
+      );
+    }
+
+    const data = await response.json() as TeamPicks;
+    // Cache the data (2 minutes - team picks can change)
+    setCachedData(cacheKey, data, CACHE_TTL.MANAGER);
+    return data;
+  } catch (error) {
+    console.error('API Error (getTeamPicks):', error);
+
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      throw new Error(
+        'Network error: Unable to connect to FPL API. Please check your internet connection or try again later.'
+      );
+    }
+
+    if (error instanceof Error) {
+      throw error;
+    }
+
+    throw new Error('An unknown error occurred while fetching team picks');
   }
 }
 

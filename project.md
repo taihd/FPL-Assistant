@@ -38,6 +38,7 @@ The app will include a **context-aware AI assistant** that can understand what p
 | **Players** | Player profile, points breakdown, stats, comparison | `/api/bootstrap-static/`, `/api/element-summary/{player_id}/` |
 | **Manager** | Manager info, history, transfers, chips | `/api/entry/{manager_id}/`, `/api/entry/{manager_id}/history/`, `/api/entry/{manager_id}/transfers/` |
 | **Leagues** | League info, standings | `/api/leagues-classic/{league_id}/standings/` |
+| **My Team** | Personal team management, view Starting XI and Bench, player details, history charts, chips, transfers, leagues | `/api/entry/{manager_id}/`, `/api/entry/{manager_id}/event/{gameweek}/picks/`, `/api/entry/{manager_id}/history/`, `/api/entry/{manager_id}/transfers/` |
 | **AI Agent** | Answers contextual FPL questions based on screen + data | Uses Gemini/OpenAI API |
 
 ---
@@ -68,17 +69,30 @@ src/
 │   └── Leagues/
 │       ├── LeaguePage.tsx
 │       └── LeagueTable.tsx
+│   └── MyTeam/
+│       ├── MyTeamPage.tsx
+│       ├── TeamSetup.tsx
+│       ├── TeamOverview.tsx
+│       ├── TeamPlayerList.tsx
+│       └── TeamPlayerCard.tsx
 │
 ├── hooks/
 │   ├── useFPLApi.ts
 │   └── useContextData.ts
 │
 ├── context/
-│   └── AppContext.tsx
+│   ├── AppContext.tsx
+│   └── TeamContext.tsx
 │
 ├── services/
 │   ├── api.ts
-│   └── aiAgent.ts
+│   ├── aiAgent.ts
+│   └── grounding.ts
+│
+├── lib/
+│   ├── utils.ts
+│   ├── cache.ts
+│   └── teamStorage.ts
 │
 ├── App.tsx
 └── main.tsx
@@ -257,10 +271,16 @@ Add TailwindCSS and shadcn/ui for UI components.
 See `MY_TEAM_PLAN.md` for detailed implementation plan.
 
 **Key Features:**
-- Save team via Manager ID (localStorage)
-- View team players with detailed stats
-- Player detail pages with history and fixtures
-- Position-based player comparison
-- AI-powered team insights
+- ✅ Save team via Manager ID (localStorage) - **Completed**
+- ✅ View team overview (value, bank, points, rank) - **Completed**
+- ✅ View team players (Starting XI + Bench) with filtering - **Completed**
+- ✅ Team auto-loads on app start - **Completed**
+- ✅ Player detail pages with history and fixtures - **Completed**
+- ✅ Position-based player comparison - **Completed**
+- ✅ AI-powered team insights - **Completed**
+- ✅ Manager history charts (Points, Rank, Value) - **Completed**
+- ✅ Chip usage display - **Completed**
+- ✅ Transfer history (collapsible) - **Completed**
+- ✅ Leagues rank (collapsible) - **Completed**
 
-**Status:** Planning phase - See MY_TEAM_PLAN.md for full details
+**Status:** All Phases Complete! 🎉 - Full My Team feature implemented with team management, player details, comparison, AI insights, history charts, chips, transfers, and leagues.

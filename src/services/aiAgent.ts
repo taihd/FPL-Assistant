@@ -98,6 +98,40 @@ async function askWithGemini({
         const snapshot = dataSnapshot as Record<string, unknown>;
         
         switch (screen) {
+          case 'my-team':
+            const playerNames = Array.isArray(snapshot.playerNames) 
+              ? (snapshot.playerNames as Array<{ name: string; position: number; points: number; price: number; form: string; isCaptain?: boolean; isViceCaptain?: boolean }>)
+              : [];
+            const captain = snapshot.captain as string | null;
+            const viceCaptain = snapshot.viceCaptain as string | null;
+            
+            contextDescription = `You are viewing the user's FPL team.
+Manager ID: ${snapshot.managerId || 'N/A'}
+Team Value: ${(snapshot.managerInfo as { last_deadline_value?: number })?.last_deadline_value ? `£${((snapshot.managerInfo as { last_deadline_value: number }).last_deadline_value / 10).toFixed(1)}m` : 'N/A'}
+Total Points: ${(snapshot.managerInfo as { summary_overall_points?: number })?.summary_overall_points || 'N/A'}
+Overall Rank: ${(snapshot.managerInfo as { summary_overall_rank?: number | null })?.summary_overall_rank ? `#${(snapshot.managerInfo as { summary_overall_rank: number }).summary_overall_rank.toLocaleString()}` : 'N/A'}
+Team Players: ${playerNames.length} players
+${captain ? `Captain: ${captain}` : ''}
+${viceCaptain ? `Vice-Captain: ${viceCaptain}` : ''}
+${playerNames.length > 0 ? `\nPlayers:\n${playerNames.map(p => `- ${p.name} (${['GK', 'DEF', 'MID', 'FWD'][p.position - 1] || 'UNK'}): ${p.points} pts, £${(p.price/10).toFixed(1)}m, Form: ${p.form || 'N/A'}${p.isCaptain ? ' [C]' : ''}${p.isViceCaptain ? ' [VC]' : ''}`).join('\n')}` : ''}
+You can answer questions about the user's team, suggest transfers, analyze team composition, recommend captains, etc.`;
+            break;
+          case 'my-team-player':
+            contextDescription = `You are viewing a player from the user's team.
+Player: ${(snapshot.player as { web_name?: string })?.web_name || 'N/A'}
+Position: ${(snapshot.player as { element_type?: number })?.element_type ? ['GK', 'DEF', 'MID', 'FWD'][((snapshot.player as { element_type: number }).element_type - 1) || 0] : 'N/A'}
+Team: ${(snapshot.player as { team?: number })?.team || 'N/A'}
+Points: ${(snapshot.player as { total_points?: number })?.total_points || 'N/A'}
+Price: ${(snapshot.player as { now_cost?: number })?.now_cost ? `£${((snapshot.player as { now_cost: number }).now_cost / 10).toFixed(1)}m` : 'N/A'}
+Is in user's team: ${snapshot.isInMyTeam ? 'Yes' : 'No'}
+You can answer questions about this specific player, compare with alternatives, suggest keeping or transferring, analyze fixtures, etc.`;
+            break;
+          case 'my-team-compare':
+            contextDescription = `You are comparing players.
+Comparing ${Array.isArray(snapshot.comparingPlayers) ? (snapshot.comparingPlayers as Array<{ web_name: string }>).length : 0} players.
+${Array.isArray(snapshot.comparingPlayers) ? `Players: ${(snapshot.comparingPlayers as Array<{ web_name: string }>).map(p => p.web_name).join(', ')}` : ''}
+You can provide detailed comparisons, recommendations on which player to choose, analyze their strengths and weaknesses, etc.`;
+            break;
           case 'fixtures':
             contextDescription = `The user is viewing fixtures. Available data includes gameweeks, teams, and fixture details.`;
             break;
@@ -185,11 +219,27 @@ async function askWithGemini({
       }
     }
 
+    // Add team-specific guidance
+    let teamGuidance = '';
+    if (screen === 'my-team' || screen === 'my-team-player' || screen === 'my-team-compare') {
+      teamGuidance = `\n\nYou can help with team-specific questions such as:
+- "Who should I captain this week?" - Analyze fixtures and form
+- "Should I transfer out [Player]?" - Compare with alternatives
+- "Analyze my team's fixtures" - Review upcoming gameweeks
+- "Compare my forwards" - Analyze forward options
+- "What transfers should I make?" - Suggest improvements
+- "Who are the best replacements for [Player]?" - Find alternatives
+- "Is my team balanced?" - Check position distribution
+- "What are my team's strengths and weaknesses?" - Overall analysis
+- "Should I keep [Player]?" - Evaluate current players
+- "What chips should I use?" - Chip strategy advice`;
+    }
+
     const prompt = `You are an expert Fantasy Premier League (FPL) assistant. Your role is to help users make informed decisions about their FPL teams.
 
 Current Context:
 - Current Page: ${screen}
-${contextDescription}${conversationContext}
+${contextDescription}${teamGuidance}${conversationContext}
 
 Current User Question: ${question}
 
