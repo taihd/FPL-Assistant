@@ -8,6 +8,8 @@ interface PositionComparisonProps {
   teams: Team[];
   allPlayers: Player[];
   limit?: number;
+  selectedForCompare?: number[];
+  onAddToCompare?: (playerId: number) => void;
 }
 
 export function PositionComparison({
@@ -15,6 +17,8 @@ export function PositionComparison({
   teams,
   allPlayers,
   limit = 10,
+  selectedForCompare = [],
+  onAddToCompare,
 }: PositionComparisonProps) {
   const navigate = useNavigate();
 
@@ -26,8 +30,13 @@ export function PositionComparison({
       .slice(0, limit);
   }, [allPlayers, currentPlayer.element_type, currentPlayer.id, limit]);
 
-  const handleCompare = (playerId: number) => {
-    navigate(`/my-team/compare?players=${currentPlayer.id},${playerId}`);
+  const handleAddToCompare = (playerId: number) => {
+    if (onAddToCompare) {
+      onAddToCompare(playerId);
+    } else {
+      // Fallback: navigate directly if no handler provided
+      navigate(`/my-team/compare?players=${currentPlayer.id},${playerId}`);
+    }
   };
 
   const getTeamName = (teamId: number): string => {
@@ -126,12 +135,18 @@ export function PositionComparison({
                     {player.assists}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-center">
-                    <button
-                      onClick={() => handleCompare(player.id)}
-                      className="rounded-md bg-slate-900 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-slate-800"
-                    >
-                      Compare
-                    </button>
+                    {selectedForCompare.includes(player.id) ? (
+                      <span className="rounded-md bg-green-100 px-3 py-1.5 text-xs font-medium text-green-800">
+                        Added
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => handleAddToCompare(player.id)}
+                        className="rounded-md bg-slate-900 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-slate-800"
+                      >
+                        Add to Compare
+                      </button>
+                    )}
                   </td>
                 </tr>
               );
