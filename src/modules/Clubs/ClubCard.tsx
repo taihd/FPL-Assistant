@@ -121,7 +121,7 @@ export function ClubCard({ team, fixtures, allTeams }: ClubCardProps) {
                       {difficulty}
                     </span>
                     <span className="text-slate-600">
-                      {isHome(fixture) ? 'vs' : '@'} {opponent.short_name}
+                      {isHome(fixture) ? '(H)' : '(A)'} {opponent.short_name}
                     </span>
                   </div>
                   {fixture.kickoff_time && (
@@ -163,7 +163,7 @@ export function ClubCard({ team, fixtures, allTeams }: ClubCardProps) {
                 >
                   <div className="flex items-center gap-2">
                     <span className="text-slate-600">
-                      {isHomeGame ? 'vs' : '@'} {opponent.short_name}
+                      {isHomeGame ? '(H)' : '(A)'} {opponent.short_name}
                     </span>
                   </div>
                   {teamScore !== null && opponentScore !== null && (
