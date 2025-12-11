@@ -10,17 +10,17 @@ interface FixtureCardProps {
 const getDifficultyColor = (difficulty: number): string => {
   switch (difficulty) {
     case 1:
-      return 'bg-green-100 text-green-800 border-green-300';
+      return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
     case 2:
-      return 'bg-lime-100 text-lime-800 border-lime-300';
+      return 'bg-lime-500/20 text-lime-400 border-lime-500/30';
     case 3:
-      return 'bg-yellow-100 text-yellow-800 border-yellow-300';
+      return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
     case 4:
-      return 'bg-orange-100 text-orange-800 border-orange-300';
+      return 'bg-orange-500/20 text-orange-400 border-orange-500/30';
     case 5:
-      return 'bg-red-100 text-red-800 border-red-300';
+      return 'bg-red-500/20 text-red-400 border-red-500/30';
     default:
-      return 'bg-slate-100 text-slate-800 border-slate-300';
+      return 'bg-slate-500/20 text-slate-400 border-slate-500/30';
   }
 };
 
@@ -46,16 +46,16 @@ export function FixtureCard({ fixture, homeTeam, awayTeam }: FixtureCardProps) {
   const hasScore = fixture.team_h_score !== null && fixture.team_a_score !== null;
 
   return (
-    <div className="rounded-lg border bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
+    <div className="rounded-lg border border-dark-border bg-[#25252B] p-4 transition-shadow hover:border-violet-500/50">
       <div className="flex items-center justify-between">
         {/* Home Team */}
         <div className="flex flex-1 items-center gap-3">
           <div className="text-right">
-            <div className="font-semibold text-slate-900">{homeTeam.name}</div>
-            <div className="text-xs text-slate-500">{homeTeam.short_name}</div>
+            <div className="font-semibold text-white">{homeTeam.name}</div>
+            <div className="text-xs text-slate-400">{homeTeam.short_name}</div>
           </div>
           {hasScore && (
-            <div className="text-2xl font-bold text-slate-900">
+            <div className="text-2xl font-bold text-white">
               {fixture.team_h_score}
             </div>
           )}
@@ -64,7 +64,7 @@ export function FixtureCard({ fixture, homeTeam, awayTeam }: FixtureCardProps) {
         {/* VS / Score */}
         <div className="mx-4 flex flex-col items-center gap-1">
           {!isFinished && !hasScore && (
-            <span className="text-sm font-medium text-slate-500">vs</span>
+            <span className="text-sm font-medium text-slate-400">vs</span>
           )}
           {fixture.kickoff_time && (
             <span className="text-xs text-slate-400">
@@ -81,21 +81,21 @@ export function FixtureCard({ fixture, homeTeam, awayTeam }: FixtureCardProps) {
         {/* Away Team */}
         <div className="flex flex-1 items-center gap-3">
           {hasScore && (
-            <div className="text-2xl font-bold text-slate-900">
+            <div className="text-2xl font-bold text-white">
               {fixture.team_a_score}
             </div>
           )}
           <div>
-            <div className="font-semibold text-slate-900">{awayTeam.name}</div>
-            <div className="text-xs text-slate-500">{awayTeam.short_name}</div>
+            <div className="font-semibold text-white">{awayTeam.name}</div>
+            <div className="text-xs text-slate-400">{awayTeam.short_name}</div>
           </div>
         </div>
       </div>
 
       {/* Difficulty Ratings */}
-      <div className="mt-4 flex items-center justify-between gap-2 border-t pt-3">
+      <div className="mt-4 flex items-center justify-between gap-2 border-t border-dark-border pt-3">
         <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-500">Home Difficulty:</span>
+          <span className="text-xs text-slate-400">Home Difficulty:</span>
           <span
             className={cn(
               'rounded border px-2 py-1 text-xs font-medium',
@@ -106,7 +106,7 @@ export function FixtureCard({ fixture, homeTeam, awayTeam }: FixtureCardProps) {
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-500">Away Difficulty:</span>
+          <span className="text-xs text-slate-400">Away Difficulty:</span>
           <span
             className={cn(
               'rounded border px-2 py-1 text-xs font-medium',

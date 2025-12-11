@@ -14,14 +14,14 @@ export function CollapsibleSection({
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   return (
-    <div className="rounded-lg border bg-white shadow-sm">
+    <div className="rounded-lg border border-dark-border bg-[#25252B]">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-slate-50"
+        className="flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-[#2A2A35]"
       >
-        <h3 className="text-lg font-semibold text-slate-900">{title}</h3>
+        <h3 className="text-lg font-semibold text-white">{title}</h3>
         <svg
-          className={`h-5 w-5 text-slate-500 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+          className={`h-5 w-5 text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -34,7 +34,7 @@ export function CollapsibleSection({
           />
         </svg>
       </button>
-      {isOpen && <div className="border-t p-4">{children}</div>}
+      {isOpen && <div className="border-t border-dark-border p-4">{children}</div>}
     </div>
   );
 }

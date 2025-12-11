@@ -58,9 +58,9 @@ export function TeamPlayerList({ players }: TeamPlayerListProps) {
   };
 
   return (
-    <div className="rounded-lg border bg-white p-6 shadow-sm">
+    <div className="rounded-lg border border-dark-border bg-[#25252B] p-6">
       <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-xl font-semibold text-slate-900">
+        <h2 className="text-xl font-semibold text-white">
           Team Players ({players.length})
         </h2>
         <div className="flex gap-2">
@@ -70,8 +70,8 @@ export function TeamPlayerList({ players }: TeamPlayerListProps) {
               onClick={() => setFilterPosition(pos)}
               className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
                 filterPosition === pos
-                  ? 'bg-slate-900 text-white'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  ? 'bg-violet-500 text-white'
+                  : 'bg-[#2A2A35] text-slate-300 hover:bg-[#2F2F3A]'
               }`}
             >
               {pos === 'all' ? 'All' : pos}
@@ -81,7 +81,7 @@ export function TeamPlayerList({ players }: TeamPlayerListProps) {
       </div>
 
       {filteredPlayers.length === 0 ? (
-        <div className="py-8 text-center text-slate-500">
+        <div className="py-8 text-center text-slate-400">
           No players found for this position.
         </div>
       ) : (
@@ -89,7 +89,7 @@ export function TeamPlayerList({ players }: TeamPlayerListProps) {
           {/* Starting XI */}
           {starters.length > 0 && (
             <div>
-              <h3 className="mb-3 text-lg font-semibold text-slate-900">
+              <h3 className="mb-3 text-lg font-semibold text-white">
                 Starting XI ({starters.length})
               </h3>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -118,7 +118,7 @@ export function TeamPlayerList({ players }: TeamPlayerListProps) {
           {/* Bench */}
           {bench.length > 0 && (
             <div>
-              <h3 className="mb-3 text-lg font-semibold text-slate-900">
+              <h3 className="mb-3 text-lg font-semibold text-white">
                 Bench ({bench.length})
               </h3>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

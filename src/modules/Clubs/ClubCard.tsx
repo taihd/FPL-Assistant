@@ -10,17 +10,17 @@ interface ClubCardProps {
 const getDifficultyColor = (difficulty: number): string => {
   switch (difficulty) {
     case 1:
-      return 'bg-green-100 text-green-800';
+      return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
     case 2:
-      return 'bg-lime-100 text-lime-800';
+      return 'bg-lime-500/20 text-lime-400 border-lime-500/30';
     case 3:
-      return 'bg-yellow-100 text-yellow-800';
+      return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
     case 4:
-      return 'bg-orange-100 text-orange-800';
+      return 'bg-orange-500/20 text-orange-400 border-orange-500/30';
     case 5:
-      return 'bg-red-100 text-red-800';
+      return 'bg-red-500/20 text-red-400 border-red-500/30';
     default:
-      return 'bg-slate-100 text-slate-800';
+      return 'bg-slate-500/20 text-slate-400 border-slate-500/30';
   }
 };
 
@@ -53,43 +53,43 @@ export function ClubCard({ team, fixtures, allTeams }: ClubCardProps) {
   const isHome = (fixture: Fixture): boolean => fixture.team_h === team.id;
 
   return (
-    <div className="rounded-lg border bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
+    <div className="rounded-lg border border-dark-border bg-[#25252B] p-6 transition-shadow hover:border-violet-500/50">
       {/* Club Header */}
-      <div className="mb-4 border-b pb-4">
+      <div className="mb-4 border-b border-dark-border pb-4">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-xl font-bold text-slate-900">{team.name}</h3>
-            <p className="text-sm text-slate-500">{team.short_name}</p>
+            <h3 className="text-xl font-bold text-white">{team.name}</h3>
+            <p className="text-sm text-slate-400">{team.short_name}</p>
           </div>
           <div className="text-right">
-            <div className="text-sm text-slate-500">Overall Strength</div>
-            <div className="text-lg font-semibold text-slate-900">{team.strength}</div>
+            <div className="text-sm text-slate-400">Overall Strength</div>
+            <div className="text-lg font-semibold text-white">{team.strength}</div>
           </div>
         </div>
 
         {/* Strength Stats */}
         <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
           <div>
-            <div className="text-slate-500">Attack (Home)</div>
-            <div className="font-semibold text-slate-900">
+            <div className="text-slate-400">Attack (Home)</div>
+            <div className="font-semibold text-white">
               {team.strength_attack_home}
             </div>
           </div>
           <div>
-            <div className="text-slate-500">Attack (Away)</div>
-            <div className="font-semibold text-slate-900">
+            <div className="text-slate-400">Attack (Away)</div>
+            <div className="font-semibold text-white">
               {team.strength_attack_away}
             </div>
           </div>
           <div>
-            <div className="text-slate-500">Defence (Home)</div>
-            <div className="font-semibold text-slate-900">
+            <div className="text-slate-400">Defence (Home)</div>
+            <div className="font-semibold text-white">
               {team.strength_defence_home}
             </div>
           </div>
           <div>
-            <div className="text-slate-500">Defence (Away)</div>
-            <div className="font-semibold text-slate-900">
+            <div className="text-slate-400">Defence (Away)</div>
+            <div className="font-semibold text-white">
               {team.strength_defence_away}
             </div>
           </div>
@@ -99,7 +99,7 @@ export function ClubCard({ team, fixtures, allTeams }: ClubCardProps) {
       {/* Upcoming Fixtures */}
       {upcomingFixtures.length > 0 && (
         <div className="mb-4">
-          <h4 className="mb-2 text-sm font-semibold text-slate-700">
+          <h4 className="mb-2 text-sm font-semibold text-white">
             Next {upcomingFixtures.length} Fixtures
           </h4>
           <div className="space-y-2">
@@ -114,13 +114,13 @@ export function ClubCard({ team, fixtures, allTeams }: ClubCardProps) {
               return (
                 <div
                   key={fixture.id}
-                  className="flex items-center justify-between rounded border p-2 text-sm"
+                  className="flex items-center justify-between rounded border border-dark-border bg-[#2A2A35] p-2 text-sm"
                 >
                   <div className="flex items-center gap-2">
-                    <span className={cn('rounded px-2 py-1 text-xs font-medium', getDifficultyColor(difficulty))}>
+                    <span className={cn('rounded border px-2 py-1 text-xs font-medium', getDifficultyColor(difficulty))}>
                       {difficulty}
                     </span>
-                    <span className="text-slate-600">
+                    <span className="text-slate-300">
                       {isHome(fixture) ? '(H)' : '(A)'} {opponent.short_name}
                     </span>
                   </div>
@@ -142,7 +142,7 @@ export function ClubCard({ team, fixtures, allTeams }: ClubCardProps) {
       {/* Past Fixtures */}
       {pastFixtures.length > 0 && (
         <div>
-          <h4 className="mb-2 text-sm font-semibold text-slate-700">
+          <h4 className="mb-2 text-sm font-semibold text-white">
             Recent Results
           </h4>
           <div className="space-y-2">
@@ -159,10 +159,10 @@ export function ClubCard({ team, fixtures, allTeams }: ClubCardProps) {
               return (
                 <div
                   key={fixture.id}
-                  className="flex items-center justify-between rounded border p-2 text-sm"
+                  className="flex items-center justify-between rounded border border-dark-border bg-[#2A2A35] p-2 text-sm"
                 >
                   <div className="flex items-center gap-2">
-                    <span className="text-slate-600">
+                    <span className="text-slate-300">
                       {isHomeGame ? '(H)' : '(A)'} {opponent.short_name}
                     </span>
                   </div>
@@ -171,10 +171,10 @@ export function ClubCard({ team, fixtures, allTeams }: ClubCardProps) {
                       className={cn(
                         'font-semibold',
                         teamScore > opponentScore
-                          ? 'text-green-600'
+                          ? 'text-emerald-400'
                           : teamScore < opponentScore
-                          ? 'text-red-600'
-                          : 'text-slate-600'
+                          ? 'text-red-400'
+                          : 'text-slate-300'
                       )}
                     >
                       {teamScore} - {opponentScore}

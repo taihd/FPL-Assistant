@@ -107,7 +107,7 @@ export function MyTeamPage() {
   if (!managerId) {
     return (
       <div>
-        <h1 className="mb-6 text-3xl font-bold text-slate-900">My Team</h1>
+        <h1 className="mb-6 text-3xl font-bold text-white">My Team</h1>
         <TeamSetup />
       </div>
     );
@@ -117,7 +117,7 @@ export function MyTeamPage() {
   if (isLoading && !managerInfo) {
     return (
       <div>
-        <h1 className="mb-6 text-3xl font-bold text-slate-900">My Team</h1>
+        <h1 className="mb-6 text-3xl font-bold text-white">My Team</h1>
         <LoadingSpinner />
       </div>
     );
@@ -127,10 +127,10 @@ export function MyTeamPage() {
   if (error && !managerInfo) {
     return (
       <div>
-        <h1 className="mb-6 text-3xl font-bold text-slate-900">My Team</h1>
-        <div className="rounded-lg border border-red-200 bg-red-50 p-6">
-          <h2 className="mb-2 text-lg font-semibold text-red-900">Error Loading Team</h2>
-          <p className="mb-4 text-sm text-red-800">{error.message}</p>
+        <h1 className="mb-6 text-3xl font-bold text-white">My Team</h1>
+        <div className="rounded-lg border border-red-500/50 bg-red-500/10 p-6">
+          <h2 className="mb-2 text-lg font-semibold text-red-400">Error Loading Team</h2>
+          <p className="mb-4 text-sm text-red-300">{error.message}</p>
           <button
             onClick={() => window.location.reload()}
             className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700"
@@ -146,11 +146,11 @@ export function MyTeamPage() {
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-slate-900">My Team</h1>
+        <h1 className="text-3xl font-bold text-white">My Team</h1>
         <button
           onClick={refreshTeam}
           disabled={isLoading}
-          className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-md bg-violet-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-violet-600 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isLoading ? 'Refreshing...' : 'Refresh Team'}
         </button>
@@ -168,23 +168,23 @@ export function MyTeamPage() {
 
       {/* Chip Usage */}
       {managerHistory && managerHistory.chips.length > 0 && (
-        <div className="mt-6 rounded-lg border bg-white p-6 shadow-sm">
-          <h2 className="mb-4 text-xl font-semibold text-slate-900">Chip Usage</h2>
+        <div className="mt-6 rounded-lg border border-dark-border bg-[#25252B] p-6">
+          <h2 className="mb-4 text-xl font-semibold text-white">Chip Usage</h2>
           <div className="space-y-2">
             {managerHistory.chips.map((chip, index) => (
               <div
                 key={index}
-                className="flex items-center justify-between rounded border border-slate-200 p-3"
+                className="flex items-center justify-between rounded border border-dark-border bg-[#2A2A35] p-3"
               >
                 <div>
-                  <div className="font-medium text-slate-900">
+                  <div className="font-medium text-white">
                     {CHIP_NAMES[chip.name] || chip.name}
                   </div>
-                  <div className="text-sm text-slate-500">
+                  <div className="text-sm text-slate-400">
                     Gameweek {chip.event}
                   </div>
                 </div>
-                <div className="text-sm text-slate-500">
+                <div className="text-sm text-slate-400">
                   {formatDate(chip.time)}
                 </div>
               </div>
@@ -198,24 +198,24 @@ export function MyTeamPage() {
         <div className="mt-6">
           <CollapsibleSection title={`Transfer History (${transfers.length})`}>
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-slate-200">
-                <thead className="bg-slate-50">
+              <table className="min-w-full divide-y divide-dark-border">
+                <thead className="bg-[#2A2A35]">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-400">
                       Gameweek
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-400">
                       Transferred Out
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-400">
                       Transferred In
                     </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-slate-500">
+                    <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-slate-400">
                       Time
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200 bg-white">
+                <tbody className="divide-y divide-dark-border bg-[#25252B]">
                   {transfers
                     .sort((a, b) => b.event - a.event)
                     .map((transfer, index) => {
@@ -226,26 +226,26 @@ export function MyTeamPage() {
 
                       return (
                         <tr key={index}>
-                          <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-600">
+                          <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-300">
                             {transfer.event}
                           </td>
                           <td className="whitespace-nowrap px-4 py-3">
-                            <div className="font-medium text-slate-900">
+                            <div className="font-medium text-white">
                               {getPlayerName(transfer.element_out)}
                             </div>
-                            <div className="text-xs text-slate-500">
+                            <div className="text-xs text-slate-400">
                               {formatPrice(transfer.element_out_cost)}
                             </div>
                           </td>
                           <td className="whitespace-nowrap px-4 py-3">
-                            <div className="font-medium text-green-600">
+                            <div className="font-medium text-emerald-400">
                               {getPlayerName(transfer.element_in)}
                             </div>
-                            <div className="text-xs text-slate-500">
+                            <div className="text-xs text-slate-400">
                               {formatPrice(transfer.element_in_cost)}
                             </div>
                           </td>
-                          <td className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-500">
+                          <td className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-400">
                             {formatDate(transfer.time)}
                           </td>
                         </tr>
@@ -266,18 +266,18 @@ export function MyTeamPage() {
               {managerInfo.leagues.classic.map((league) => (
                 <div
                   key={league.id}
-                  className="flex items-center justify-between rounded border border-slate-200 p-3"
+                  className="flex items-center justify-between rounded border border-dark-border bg-[#2A2A35] p-3"
                 >
                   <div>
-                    <div className="font-medium text-slate-900">{league.name}</div>
-                    <div className="text-sm text-slate-500">{league.league_type}</div>
+                    <div className="font-medium text-white">{league.name}</div>
+                    <div className="text-sm text-slate-400">{league.league_type}</div>
                   </div>
                   {league.entry_rank && (
                     <div className="text-right">
-                      <div className="font-semibold text-slate-900">
+                      <div className="font-semibold text-white">
                         Rank: {league.entry_rank}
                       </div>
-                      <div className="text-xs text-slate-500">
+                      <div className="text-xs text-slate-400">
                         of {league.max_entries || 'N/A'}
                       </div>
                     </div>

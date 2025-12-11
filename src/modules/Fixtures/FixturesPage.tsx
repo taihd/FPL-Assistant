@@ -86,7 +86,7 @@ export function FixturesPage() {
   if (isLoading) {
     return (
       <div>
-        <h1 className="mb-6 text-3xl font-bold text-slate-900">Fixtures</h1>
+        <h1 className="mb-6 text-3xl font-bold text-white">Fixtures</h1>
         <LoadingSpinner />
       </div>
     );
@@ -95,10 +95,10 @@ export function FixturesPage() {
   if (error) {
     return (
       <div>
-        <h1 className="mb-6 text-3xl font-bold text-slate-900">Fixtures</h1>
-        <div className="rounded-lg bg-red-50 p-6 text-red-800">
-          <p className="mb-2 font-semibold">Error loading fixtures</p>
-          <p className="mb-4 text-sm">{error.message}</p>
+        <h1 className="mb-6 text-3xl font-bold text-white">Fixtures</h1>
+        <div className="rounded-lg border border-red-500/50 bg-red-500/10 p-6">
+          <p className="mb-2 font-semibold text-red-400">Error loading fixtures</p>
+          <p className="mb-4 text-sm text-red-300">{error.message}</p>
           <button
             onClick={() => {
               setError(null);
@@ -154,15 +154,15 @@ export function FixturesPage() {
 
   return (
     <div>
-      <h1 className="mb-6 text-3xl font-bold text-slate-900">Fixtures</h1>
+      <h1 className="mb-6 text-3xl font-bold text-white">Fixtures</h1>
 
       {/* Filters */}
-      <div className="mb-6 flex flex-col gap-4 rounded-lg bg-white p-4 shadow-sm sm:flex-row">
+      <div className="mb-6 flex flex-col gap-4 rounded-lg border border-dark-border bg-[#25252B] p-4 sm:flex-row">
         {/* Gameweek Selector */}
         <div className="flex-1">
           <label
             htmlFor="gameweek-select"
-            className="mb-2 block text-sm font-medium text-slate-700"
+            className="mb-2 block text-sm font-medium text-white"
           >
             Gameweek
           </label>
@@ -174,11 +174,11 @@ export function FixturesPage() {
                 e.target.value ? parseInt(e.target.value, 10) : null
               )
             }
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-500"
+            className="w-full rounded-md border border-dark-border bg-[#2A2A35] px-3 py-2 text-sm text-white focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
           >
-            <option value="">All Gameweeks</option>
+            <option value="" className="bg-[#2A2A35] text-white">All Gameweeks</option>
             {events.map((event) => (
-              <option key={event.id} value={event.id}>
+              <option key={event.id} value={event.id} className="bg-[#2A2A35] text-white">
                 {event.name} {event.finished ? '(Finished)' : ''}
               </option>
             ))}
@@ -189,7 +189,7 @@ export function FixturesPage() {
         <div className="flex-1">
           <label
             htmlFor="team-select"
-            className="mb-2 block text-sm font-medium text-slate-700"
+            className="mb-2 block text-sm font-medium text-white"
           >
             Filter by Team
           </label>
@@ -201,11 +201,11 @@ export function FixturesPage() {
                 e.target.value ? parseInt(e.target.value, 10) : null
               )
             }
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-500"
+            className="w-full rounded-md border border-dark-border bg-[#2A2A35] px-3 py-2 text-sm text-white focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
           >
-            <option value="">All Teams</option>
+            <option value="" className="bg-[#2A2A35] text-white">All Teams</option>
             {teams.map((team) => (
-              <option key={team.id} value={team.id}>
+              <option key={team.id} value={team.id} className="bg-[#2A2A35] text-white">
                 {team.name}
               </option>
             ))}
@@ -220,7 +220,7 @@ export function FixturesPage() {
                 setSelectedGameweek(null);
                 setSelectedTeamId(null);
               }}
-              className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
+              className="rounded-md border border-dark-border bg-[#2A2A35] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#2F2F3A]"
             >
               Clear Filters
             </button>
@@ -232,8 +232,8 @@ export function FixturesPage() {
       {loading ? (
         <LoadingSpinner />
       ) : filteredFixtures.length === 0 ? (
-        <div className="rounded-lg bg-white p-8 text-center shadow-sm">
-          <p className="text-slate-600">No fixtures found matching your filters.</p>
+        <div className="rounded-lg border border-dark-border bg-[#25252B] p-8 text-center">
+          <p className="text-slate-300">No fixtures found matching your filters.</p>
         </div>
       ) : (
         <div className="space-y-4">

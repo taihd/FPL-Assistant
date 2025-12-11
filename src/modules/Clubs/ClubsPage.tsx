@@ -86,7 +86,7 @@ export function ClubsPage() {
   if (isLoading) {
     return (
       <div>
-        <h1 className="mb-6 text-3xl font-bold text-slate-900">Clubs</h1>
+        <h1 className="mb-6 text-3xl font-bold text-white">Clubs</h1>
         <LoadingSpinner />
       </div>
     );
@@ -95,10 +95,10 @@ export function ClubsPage() {
   if (error) {
     return (
       <div>
-        <h1 className="mb-6 text-3xl font-bold text-slate-900">Clubs</h1>
-        <div className="rounded-lg bg-red-50 p-6 text-red-800">
-          <p className="mb-2 font-semibold">Error loading clubs</p>
-          <p className="mb-4 text-sm">{error.message}</p>
+        <h1 className="mb-6 text-3xl font-bold text-white">Clubs</h1>
+        <div className="rounded-lg border border-red-500/50 bg-red-500/10 p-6">
+          <p className="mb-2 font-semibold text-red-400">Error loading clubs</p>
+          <p className="mb-4 text-sm text-red-300">{error.message}</p>
           <button
             onClick={() => {
               setError(null);
@@ -139,14 +139,14 @@ export function ClubsPage() {
 
   return (
     <div>
-      <h1 className="mb-6 text-3xl font-bold text-slate-900">Premier League Clubs</h1>
+      <h1 className="mb-6 text-3xl font-bold text-white">Premier League Clubs</h1>
 
       {/* Search and Compare Controls */}
-      <div className="mb-6 flex flex-col gap-4 rounded-lg bg-white p-4 shadow-sm sm:flex-row">
+      <div className="mb-6 flex flex-col gap-4 rounded-lg border border-dark-border bg-[#25252B] p-4 sm:flex-row">
         <div className="flex-1">
           <label
             htmlFor="club-search"
-            className="mb-2 block text-sm font-medium text-slate-700"
+            className="mb-2 block text-sm font-medium text-white"
           >
             Search Clubs
           </label>
@@ -156,7 +156,7 @@ export function ClubsPage() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search by team name..."
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-500"
+            className="w-full rounded-md border border-dark-border bg-[#2A2A35] px-3 py-2 text-sm text-white placeholder:text-slate-400 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
           />
         </div>
 
@@ -167,8 +167,8 @@ export function ClubsPage() {
               className={cn(
                 'rounded-md px-4 py-2 text-sm font-medium transition-colors',
                 showCompare
-                  ? 'bg-slate-900 text-white hover:bg-slate-800'
-                  : 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+                  ? 'bg-violet-500 text-white hover:bg-violet-600'
+                  : 'border border-dark-border bg-[#2A2A35] text-white hover:bg-[#2F2F3A]'
               )}
             >
               {showCompare ? 'Hide' : 'Show'} Comparison ({selectedTeams.length})
@@ -178,7 +178,7 @@ export function ClubsPage() {
                 setSelectedTeams([]);
                 setShowCompare(false);
               }}
-              className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
+              className="rounded-md border border-dark-border bg-[#2A2A35] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#2F2F3A]"
             >
               Clear
             </button>
@@ -195,8 +195,8 @@ export function ClubsPage() {
 
       {/* Clubs Grid */}
       {filteredTeams.length === 0 ? (
-        <div className="rounded-lg bg-white p-8 text-center shadow-sm">
-          <p className="text-slate-600">No clubs found matching your search.</p>
+        <div className="rounded-lg border border-dark-border bg-[#25252B] p-8 text-center">
+          <p className="text-slate-300">No clubs found matching your search.</p>
         </div>
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -208,8 +208,8 @@ export function ClubsPage() {
                 className={cn(
                   'absolute right-2 top-2 rounded-full p-1.5 transition-colors',
                   selectedTeams.includes(team.id)
-                    ? 'bg-slate-900 text-white hover:bg-slate-800'
-                    : 'bg-white text-slate-400 shadow-sm hover:bg-slate-50 hover:text-slate-600'
+                    ? 'bg-violet-500 text-white hover:bg-violet-600'
+                    : 'bg-[#2A2A35] text-slate-400 hover:bg-[#2F2F3A] hover:text-white'
                 )}
                 title={
                   selectedTeams.includes(team.id)

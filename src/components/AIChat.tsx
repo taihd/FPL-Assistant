@@ -98,7 +98,7 @@ export function AIChat() {
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-slate-900 text-white shadow-lg transition-all hover:bg-slate-800 hover:shadow-xl"
+        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-violet-500 text-white shadow-lg transition-all hover:bg-violet-600 hover:shadow-xl"
         aria-label="Open AI Assistant"
       >
         <svg
@@ -119,19 +119,19 @@ export function AIChat() {
   }
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 w-[calc(100vw-2rem)] max-w-96 rounded-lg border bg-white shadow-2xl sm:bottom-6 sm:right-6">
+    <div className="fixed bottom-4 right-4 z-50 w-[calc(100vw-2rem)] max-w-96 rounded-lg border border-dark-border bg-[#25252B] shadow-2xl sm:bottom-6 sm:right-6">
       {/* Header */}
-      <div className="flex items-center justify-between border-b bg-slate-900 p-4 text-white">
+      <div className="flex items-center justify-between border-b border-dark-border bg-violet-500 p-4 text-white">
         <div>
           <h3 className="font-semibold">AI Assistant</h3>
-          <p className="text-xs text-slate-300">
+          <p className="text-xs text-violet-100">
             Context: {getScreenName(screen)}
           </p>
         </div>
         <div className="flex gap-2">
           <button
             onClick={clearChat}
-            className="rounded p-1 text-slate-300 transition-colors hover:bg-slate-800 hover:text-white"
+            className="rounded p-1 text-violet-100 transition-colors hover:bg-violet-600 hover:text-white"
             title="Clear chat"
           >
             <svg
@@ -150,7 +150,7 @@ export function AIChat() {
           </button>
           <button
             onClick={() => setIsOpen(false)}
-            className="rounded p-1 text-slate-300 transition-colors hover:bg-slate-800 hover:text-white"
+            className="rounded p-1 text-violet-100 transition-colors hover:bg-violet-600 hover:text-white"
             title="Close chat"
           >
             <svg
@@ -171,12 +171,12 @@ export function AIChat() {
       </div>
 
       {/* Messages */}
-      <div className="h-96 overflow-y-auto p-4">
+      <div className="h-96 overflow-y-auto bg-[#25252B] p-4">
         {messages.length === 0 ? (
           <div className="flex h-full items-center justify-center">
-            <div className="text-center text-slate-500">
-              <p className="mb-2 text-sm font-medium">Ask me anything about FPL!</p>
-              <p className="text-xs">
+            <div className="text-center text-slate-400">
+              <p className="mb-2 text-sm font-medium text-white">Ask me anything about FPL!</p>
+              <p className="text-xs text-slate-300">
                 I can help with fixtures, players, clubs, managers, and more.
               </p>
               <p className="mt-4 text-xs text-slate-400">
@@ -196,16 +196,16 @@ export function AIChat() {
                 <div
                   className={`max-w-[80%] rounded-lg px-4 py-2 ${
                     message.role === 'user'
-                      ? 'bg-slate-900 text-white'
-                      : 'bg-slate-100 text-slate-900'
+                      ? 'bg-violet-500 text-white'
+                      : 'bg-[#2A2A35] text-white'
                   }`}
                 >
                   <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                   <p
                     className={`mt-1 text-xs ${
                       message.role === 'user'
-                        ? 'text-slate-300'
-                        : 'text-slate-500'
+                        ? 'text-violet-100'
+                        : 'text-slate-400'
                     }`}
                   >
                     {message.timestamp.toLocaleTimeString('en-GB', {
@@ -218,7 +218,7 @@ export function AIChat() {
             ))}
             {loading && (
               <div className="flex justify-start">
-                <div className="rounded-lg bg-slate-100 px-4 py-2">
+                <div className="rounded-lg bg-[#2A2A35] px-4 py-2">
                   <LoadingSpinner />
                 </div>
               </div>
@@ -229,7 +229,7 @@ export function AIChat() {
       </div>
 
       {/* Input */}
-      <div className="border-t p-4">
+      <div className="border-t border-dark-border bg-[#25252B] p-4">
         <form onSubmit={handleSubmit}>
           <div className="flex gap-2">
             <input
@@ -237,20 +237,20 @@ export function AIChat() {
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
               placeholder="Ask a question..."
-              className="flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-500"
+              className="flex-1 rounded-md border border-dark-border bg-[#2A2A35] px-3 py-2 text-sm text-white placeholder:text-slate-400 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
               disabled={loading}
             />
             <button
               type="submit"
               disabled={loading || !question.trim()}
-              className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-md bg-violet-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-violet-600 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Send
             </button>
           </div>
         </form>
         {error && (
-          <p className="mt-2 text-xs text-red-600">{error}</p>
+          <p className="mt-2 text-xs text-red-400">{error}</p>
         )}
       </div>
     </div>
