@@ -1,11 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAppContext } from '@/context/AppContext';
 import { getBootstrapData, getPlayerSummary } from '@/services/api';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import type { Player, Team } from '@/types/fpl';
 import type { PlayerSummary } from '@/types/player';
-import { formatPrice, getPositionFullName } from '@/lib/utils';
+import {
+  formatPrice,
+  getPositionFullName,
+  isHigherBetter,
+  findBestAndWorst,
+} from '@/lib/utils';
 
 export function PlayerComparePage() {
   const [searchParams] = useSearchParams();
@@ -148,203 +153,7 @@ export function PlayerComparePage() {
       <h1 className="mb-6 text-3xl font-bold text-white">Player Comparison</h1>
 
       {/* Comparison Table */}
-      <div className="mb-6 rounded-lg border border-dark-border bg-[#25252B] p-6">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-dark-border">
-            <thead className="bg-[#2A2A35]">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-400">
-                  Stat
-                </th>
-                {players.map((player) => (
-                  <th
-                    key={player.id}
-                    className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-slate-400"
-                  >
-                    <div>
-                      <div className="font-semibold text-white">{player.web_name}</div>
-                      <div className="text-xs font-normal text-slate-400">
-                        {getTeamShortName(player.team)}
-                      </div>
-                    </div>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-dark-border bg-[#25252B]">
-              <tr>
-                <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
-                  Position
-                </td>
-                {players.map((player) => (
-                  <td
-                    key={player.id}
-                    className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300"
-                  >
-                    {getPositionFullName(player.element_type)}
-                  </td>
-                ))}
-              </tr>
-              <tr>
-                <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
-                  Price
-                </td>
-                {players.map((player) => (
-                  <td
-                    key={player.id}
-                    className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300"
-                  >
-                    {formatPrice(player.now_cost)}
-                  </td>
-                ))}
-              </tr>
-              <tr>
-                <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
-                  Total Points
-                </td>
-                {players.map((player) => (
-                  <td
-                    key={player.id}
-                    className="whitespace-nowrap px-4 py-3 text-center text-sm font-semibold text-white"
-                  >
-                    {player.total_points}
-                  </td>
-                ))}
-              </tr>
-              <tr>
-                <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
-                  Points per Game
-                </td>
-                {players.map((player) => (
-                  <td
-                    key={player.id}
-                    className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300"
-                  >
-                    {parseFloat(player.points_per_game || '0').toFixed(1)}
-                  </td>
-                ))}
-              </tr>
-              <tr>
-                <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
-                  Form
-                </td>
-                {players.map((player) => (
-                  <td
-                    key={player.id}
-                    className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300"
-                  >
-                    {player.form || 'N/A'}
-                  </td>
-                ))}
-              </tr>
-              <tr>
-                <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
-                  Ownership
-                </td>
-                {players.map((player) => (
-                  <td
-                    key={player.id}
-                    className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300"
-                  >
-                    {parseFloat(player.selected_by_percent).toFixed(1)}%
-                  </td>
-                ))}
-              </tr>
-              <tr>
-                <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
-                  Goals
-                </td>
-                {players.map((player) => (
-                  <td
-                    key={player.id}
-                    className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300"
-                  >
-                    {player.goals_scored}
-                  </td>
-                ))}
-              </tr>
-              <tr>
-                <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
-                  Assists
-                </td>
-                {players.map((player) => (
-                  <td
-                    key={player.id}
-                    className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300"
-                  >
-                    {player.assists}
-                  </td>
-                ))}
-              </tr>
-              <tr>
-                <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
-                  Clean Sheets
-                </td>
-                {players.map((player) => (
-                  <td
-                    key={player.id}
-                    className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300"
-                  >
-                    {player.clean_sheets}
-                  </td>
-                ))}
-              </tr>
-              <tr>
-                <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
-                  ICT Index
-                </td>
-                {players.map((player) => (
-                  <td
-                    key={player.id}
-                    className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300"
-                  >
-                    {parseFloat(player.ict_index).toFixed(1)}
-                  </td>
-                ))}
-              </tr>
-              <tr>
-                <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
-                  Influence
-                </td>
-                {players.map((player) => (
-                  <td
-                    key={player.id}
-                    className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300"
-                  >
-                    {parseFloat(player.influence).toFixed(1)}
-                  </td>
-                ))}
-              </tr>
-              <tr>
-                <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
-                  Creativity
-                </td>
-                {players.map((player) => (
-                  <td
-                    key={player.id}
-                    className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300"
-                  >
-                    {parseFloat(player.creativity).toFixed(1)}
-                  </td>
-                ))}
-              </tr>
-              <tr>
-                <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
-                  Threat
-                </td>
-                {players.map((player) => (
-                  <td
-                    key={player.id}
-                    className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300"
-                  >
-                    {parseFloat(player.threat).toFixed(1)}
-                  </td>
-                ))}
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <ComparisonTable players={players} getTeamShortName={getTeamShortName} />
 
       {/* Upcoming Fixtures Comparison */}
       {players.length > 0 && (
@@ -363,7 +172,10 @@ export function PlayerComparePage() {
               if (upcomingFixtures.length === 0) return null;
 
               return (
-                <div key={player.id} className="border-t border-dark-border pt-4 first:border-t-0 first:pt-0">
+                <div
+                  key={player.id}
+                  className="border-t border-dark-border pt-4 first:border-t-0 first:pt-0"
+                >
                   <h3 className="mb-2 text-sm font-semibold text-white">
                     {player.web_name} ({getTeamShortName(player.team)})
                   </h3>
@@ -399,7 +211,8 @@ export function PlayerComparePage() {
                           key={fixture.id}
                           className={`rounded-md border px-2 py-1 text-xs ${getDifficultyColor(fixture.difficulty)}`}
                         >
-                          GW {fixture.event} vs {opponentName} ({homeAway}) - {fixture.difficulty}
+                          GW {fixture.event} vs {opponentName} ({homeAway}) -{' '}
+                          {fixture.difficulty}
                         </div>
                       );
                     })}
@@ -410,6 +223,343 @@ export function PlayerComparePage() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+interface ComparisonTableProps {
+  players: Player[];
+  getTeamShortName: (teamId: number) => string;
+}
+
+function ComparisonTable({ players, getTeamShortName }: ComparisonTableProps) {
+  // Calculate best/worst for each stat
+  const statComparisons = useMemo(() => {
+    const getStatValue = (stat: string, index: number): number => {
+      const player = players[index];
+      switch (stat) {
+        case 'price':
+          return player.now_cost;
+        case 'points':
+          return player.total_points;
+        case 'pointsPerGame':
+          return parseFloat(player.points_per_game || '0');
+        case 'form':
+          return parseFloat(player.form || '0');
+        case 'ownership':
+          return parseFloat(player.selected_by_percent);
+        case 'goals':
+          return player.goals_scored;
+        case 'assists':
+          return player.assists;
+        case 'cleanSheets':
+          return player.clean_sheets;
+        case 'ict':
+          return parseFloat(player.ict_index || '0');
+        case 'influence':
+          return parseFloat(player.influence || '0');
+        case 'creativity':
+          return parseFloat(player.creativity || '0');
+        case 'threat':
+          return parseFloat(player.threat || '0');
+        default:
+          return 0;
+      }
+    };
+
+    const stats = [
+      'price',
+      'points',
+      'pointsPerGame',
+      'form',
+      'ownership',
+      'goals',
+      'assists',
+      'cleanSheets',
+      'ict',
+      'influence',
+      'creativity',
+      'threat',
+    ];
+
+    const comparisons: Record<
+      string,
+      { bestIndices: number[]; worstIndices: number[] }
+    > = {};
+
+    stats.forEach((stat) => {
+      comparisons[stat] = findBestAndWorst(
+        players,
+        (_, index) => getStatValue(stat, index),
+        isHigherBetter(stat)
+      );
+    });
+
+    return comparisons;
+  }, [players]);
+
+  const getCellClassName = (
+    statName: string,
+    index: number,
+    baseClasses: string
+  ): string => {
+    const comparison = statComparisons[statName];
+    if (!comparison) return baseClasses;
+
+    if (comparison.bestIndices.includes(index)) {
+      return `${baseClasses} font-bold text-green-400`;
+    }
+    if (comparison.worstIndices.includes(index)) {
+      return `${baseClasses} opacity-50`;
+    }
+    return baseClasses;
+  };
+
+  return (
+    <div className="mb-6 rounded-lg border border-dark-border bg-[#25252B] p-6">
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-dark-border">
+          <thead className="bg-[#2A2A35]">
+            <tr>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-400">
+                Stat
+              </th>
+              {players.map((player) => (
+                <th
+                  key={player.id}
+                  className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-slate-400"
+                >
+                  <div>
+                    <div className="font-semibold text-white">{player.web_name}</div>
+                    <div className="text-xs font-normal text-slate-400">
+                      {getTeamShortName(player.team)}
+                    </div>
+                  </div>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-dark-border bg-[#25252B]">
+            <tr>
+              <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
+                Position
+              </td>
+              {players.map((player) => (
+                <td
+                  key={player.id}
+                  className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300"
+                >
+                  {getPositionFullName(player.element_type)}
+                </td>
+              ))}
+            </tr>
+            <tr>
+              <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
+                Price
+              </td>
+              {players.map((player, index) => (
+                <td
+                  key={player.id}
+                  className={getCellClassName(
+                    'price',
+                    index,
+                    'whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300'
+                  )}
+                >
+                  {formatPrice(player.now_cost)}
+                </td>
+              ))}
+            </tr>
+            <tr>
+              <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
+                Total Points
+              </td>
+              {players.map((player, index) => (
+                <td
+                  key={player.id}
+                  className={getCellClassName(
+                    'points',
+                    index,
+                    'whitespace-nowrap px-4 py-3 text-center text-sm font-semibold text-white'
+                  )}
+                >
+                  {player.total_points}
+                </td>
+              ))}
+            </tr>
+            <tr>
+              <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
+                Points per Game
+              </td>
+              {players.map((player, index) => (
+                <td
+                  key={player.id}
+                  className={getCellClassName(
+                    'pointsPerGame',
+                    index,
+                    'whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300'
+                  )}
+                >
+                  {parseFloat(player.points_per_game || '0').toFixed(1)}
+                </td>
+              ))}
+            </tr>
+            <tr>
+              <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
+                Form
+              </td>
+              {players.map((player, index) => (
+                <td
+                  key={player.id}
+                  className={getCellClassName(
+                    'form',
+                    index,
+                    'whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300'
+                  )}
+                >
+                  {player.form || 'N/A'}
+                </td>
+              ))}
+            </tr>
+            <tr>
+              <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
+                Ownership
+              </td>
+              {players.map((player, index) => (
+                <td
+                  key={player.id}
+                  className={getCellClassName(
+                    'ownership',
+                    index,
+                    'whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300'
+                  )}
+                >
+                  {parseFloat(player.selected_by_percent).toFixed(1)}%
+                </td>
+              ))}
+            </tr>
+            <tr>
+              <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
+                Goals
+              </td>
+              {players.map((player, index) => (
+                <td
+                  key={player.id}
+                  className={getCellClassName(
+                    'goals',
+                    index,
+                    'whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300'
+                  )}
+                >
+                  {player.goals_scored}
+                </td>
+              ))}
+            </tr>
+            <tr>
+              <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
+                Assists
+              </td>
+              {players.map((player, index) => (
+                <td
+                  key={player.id}
+                  className={getCellClassName(
+                    'assists',
+                    index,
+                    'whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300'
+                  )}
+                >
+                  {player.assists}
+                </td>
+              ))}
+            </tr>
+            <tr>
+              <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
+                Clean Sheets
+              </td>
+              {players.map((player, index) => (
+                <td
+                  key={player.id}
+                  className={getCellClassName(
+                    'cleanSheets',
+                    index,
+                    'whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300'
+                  )}
+                >
+                  {player.clean_sheets}
+                </td>
+              ))}
+            </tr>
+            <tr>
+              <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
+                ICT Index
+              </td>
+              {players.map((player, index) => (
+                <td
+                  key={player.id}
+                  className={getCellClassName(
+                    'ict',
+                    index,
+                    'whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300'
+                  )}
+                >
+                  {parseFloat(player.ict_index).toFixed(1)}
+                </td>
+              ))}
+            </tr>
+            <tr>
+              <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
+                Influence
+              </td>
+              {players.map((player, index) => (
+                <td
+                  key={player.id}
+                  className={getCellClassName(
+                    'influence',
+                    index,
+                    'whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300'
+                  )}
+                >
+                  {parseFloat(player.influence).toFixed(1)}
+                </td>
+              ))}
+            </tr>
+            <tr>
+              <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
+                Creativity
+              </td>
+              {players.map((player, index) => (
+                <td
+                  key={player.id}
+                  className={getCellClassName(
+                    'creativity',
+                    index,
+                    'whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300'
+                  )}
+                >
+                  {parseFloat(player.creativity).toFixed(1)}
+                </td>
+              ))}
+            </tr>
+            <tr>
+              <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
+                Threat
+              </td>
+              {players.map((player, index) => (
+                <td
+                  key={player.id}
+                  className={getCellClassName(
+                    'threat',
+                    index,
+                    'whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300'
+                  )}
+                >
+                  {parseFloat(player.threat).toFixed(1)}
+                </td>
+              ))}
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
