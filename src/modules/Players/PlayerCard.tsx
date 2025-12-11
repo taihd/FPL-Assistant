@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import type { Player, Team, ElementType } from '@/types/fpl';
 import { cn } from '@/lib/utils';
 
@@ -27,12 +28,20 @@ const getPositionColor = (positionId: number): string => {
 };
 
 export function PlayerCard({ player, team, position }: PlayerCardProps) {
+  const navigate = useNavigate();
   const ownership = parseFloat(player.selected_by_percent);
   const form = parseFloat(player.form || '0');
   const pointsPerGame = parseFloat(player.points_per_game || '0');
 
+  const handleCardClick = () => {
+    navigate(`/my-team/player/${player.id}`);
+  };
+
   return (
-    <div className="rounded-lg border border-dark-border bg-[#25252B] p-6 transition-shadow hover:border-violet-500/50">
+    <div
+      onClick={handleCardClick}
+      className="cursor-pointer rounded-lg border border-dark-border bg-[#25252B] p-6 transition-shadow hover:border-violet-500/50"
+    >
       {/* Header */}
       <div className="mb-4 border-b border-dark-border pb-4">
         <div className="flex items-start justify-between">

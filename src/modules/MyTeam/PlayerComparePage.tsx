@@ -153,7 +153,11 @@ export function PlayerComparePage() {
       <h1 className="mb-6 text-3xl font-bold text-white">Player Comparison</h1>
 
       {/* Comparison Table */}
-      <ComparisonTable players={players} getTeamShortName={getTeamShortName} />
+      <ComparisonTable
+        players={players}
+        playerSummaries={playerSummaries}
+        getTeamShortName={getTeamShortName}
+      />
 
       {/* Upcoming Fixtures Comparison */}
       {players.length > 0 && (
@@ -229,10 +233,15 @@ export function PlayerComparePage() {
 
 interface ComparisonTableProps {
   players: Player[];
+  playerSummaries: Map<number, PlayerSummary>;
   getTeamShortName: (teamId: number) => string;
 }
 
-function ComparisonTable({ players, getTeamShortName }: ComparisonTableProps) {
+function ComparisonTable({
+  players,
+  playerSummaries,
+  getTeamShortName,
+}: ComparisonTableProps) {
   // Calculate best/worst for each stat
   const statComparisons = useMemo(() => {
     const getStatValue = (stat: string, index: number): number => {
@@ -262,6 +271,35 @@ function ComparisonTable({ players, getTeamShortName }: ComparisonTableProps) {
           return parseFloat(player.creativity || '0');
         case 'threat':
           return parseFloat(player.threat || '0');
+        case 'minutes':
+          return player.minutes;
+        case 'cleanSheets':
+          return player.clean_sheets;
+        case 'goalsConceded':
+          return player.goals_conceded;
+        case 'bonus':
+          return player.bonus;
+        case 'bps':
+          return player.bps;
+        case 'defensiveContribution': {
+          // Use defensive_contribution from history if available, otherwise calculate from clean_sheets
+          const summary = playerSummaries.get(player.id);
+          if (summary && summary.history.length > 0) {
+            // Check if defensive_contribution field exists in history
+            const hasDefConField = summary.history.some(
+              (h) => h.defensive_contribution !== undefined
+            );
+            if (hasDefConField) {
+              return summary.history.reduce(
+                (sum, h) => sum + (h.defensive_contribution || 0),
+                0
+              );
+            }
+            // Fallback to clean_sheets if defensive_contribution doesn't exist
+            return summary.history.reduce((sum, h) => sum + h.clean_sheets, 0);
+          }
+          return player.clean_sheets;
+        }
         default:
           return 0;
       }
@@ -270,16 +308,20 @@ function ComparisonTable({ players, getTeamShortName }: ComparisonTableProps) {
     const stats = [
       'price',
       'points',
-      'pointsPerGame',
       'form',
+      'ict',
       'ownership',
+      'minutes',
       'goals',
       'assists',
-      'cleanSheets',
-      'ict',
-      'influence',
-      'creativity',
       'threat',
+      'creativity',
+      'influence',
+      'cleanSheets',
+      'goalsConceded',
+      'defensiveContribution',
+      'bonus',
+      'bps',
     ];
 
     const comparisons: Record<
@@ -288,15 +330,16 @@ function ComparisonTable({ players, getTeamShortName }: ComparisonTableProps) {
     > = {};
 
     stats.forEach((stat) => {
+      const indices = players.map((_, index) => index);
       comparisons[stat] = findBestAndWorst(
-        players,
-        (_, index) => getStatValue(stat, index),
+        indices,
+        (index: number) => getStatValue(stat, index),
         isHigherBetter(stat)
       );
     });
 
     return comparisons;
-  }, [players]);
+  }, [players, playerSummaries]);
 
   const getCellClassName = (
     statName: string,
@@ -353,6 +396,16 @@ function ComparisonTable({ players, getTeamShortName }: ComparisonTableProps) {
                 </td>
               ))}
             </tr>
+
+            {/* General Stats Section */}
+            <tr className="bg-[#1F1F26]">
+              <td
+                colSpan={players.length + 1}
+                className="px-4 py-2 text-sm font-bold text-white"
+              >
+                General Stats
+              </td>
+            </tr>
             <tr>
               <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
                 Price
@@ -389,23 +442,6 @@ function ComparisonTable({ players, getTeamShortName }: ComparisonTableProps) {
             </tr>
             <tr>
               <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
-                Points per Game
-              </td>
-              {players.map((player, index) => (
-                <td
-                  key={player.id}
-                  className={getCellClassName(
-                    'pointsPerGame',
-                    index,
-                    'whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300'
-                  )}
-                >
-                  {parseFloat(player.points_per_game || '0').toFixed(1)}
-                </td>
-              ))}
-            </tr>
-            <tr>
-              <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
                 Form
               </td>
               {players.map((player, index) => (
@@ -423,7 +459,7 @@ function ComparisonTable({ players, getTeamShortName }: ComparisonTableProps) {
             </tr>
             <tr>
               <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
-                Ownership
+                Selected By
               </td>
               {players.map((player, index) => (
                 <td
@@ -437,6 +473,79 @@ function ComparisonTable({ players, getTeamShortName }: ComparisonTableProps) {
                   {parseFloat(player.selected_by_percent).toFixed(1)}%
                 </td>
               ))}
+            </tr>
+            <tr>
+              <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
+                Total Minutes
+              </td>
+              {players.map((player, index) => (
+                <td
+                  key={player.id}
+                  className={getCellClassName(
+                    'minutes',
+                    index,
+                    'whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300'
+                  )}
+                >
+                  {player.minutes.toLocaleString()}
+                </td>
+              ))}
+            </tr>
+            <tr>
+              <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
+                Avg Minutes (by Starts)
+              </td>
+              {players.map((player) => {
+                const summary = playerSummaries.get(player.id);
+                const starts =
+                  summary && summary.history.length > 0
+                    ? summary.history.filter((h) => h.starts !== undefined && h.starts > 0).length
+                    : summary && summary.history.length > 0
+                      ? summary.history.filter((h) => h.minutes > 0).length
+                      : 0;
+                const avgMinutes = starts > 0 ? (player.minutes / starts).toFixed(1) : '0.0';
+                return (
+                  <td
+                    key={player.id}
+                    className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300"
+                  >
+                    {avgMinutes}
+                  </td>
+                );
+              })}
+            </tr>
+            <tr>
+              <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
+                Starts
+              </td>
+              {players.map((player) => {
+                const summary = playerSummaries.get(player.id);
+                const starts =
+                  summary && summary.history.length > 0
+                    ? summary.history.reduce(
+                        (sum, h) => sum + (h.starts || (h.minutes >= 60 ? 1 : 0)),
+                        0
+                      )
+                    : 0;
+                return (
+                  <td
+                    key={player.id}
+                    className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300"
+                  >
+                    {starts}
+                  </td>
+                );
+              })}
+            </tr>
+
+            {/* Offensive Stats Section */}
+            <tr className="bg-[#1F1F26]">
+              <td
+                colSpan={players.length + 1}
+                className="px-4 py-2 text-sm font-bold text-white"
+              >
+                Offensive Stats
+              </td>
             </tr>
             <tr>
               <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
@@ -474,52 +583,87 @@ function ComparisonTable({ players, getTeamShortName }: ComparisonTableProps) {
             </tr>
             <tr>
               <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
-                Clean Sheets
+                xG (Expected Goals)
               </td>
-              {players.map((player, index) => (
-                <td
-                  key={player.id}
-                  className={getCellClassName(
-                    'cleanSheets',
-                    index,
-                    'whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300'
-                  )}
-                >
-                  {player.clean_sheets}
-                </td>
-              ))}
+              {players.map((player) => {
+                const summary = playerSummaries.get(player.id);
+                const xg =
+                  summary && summary.history.length > 0
+                    ? summary.history.reduce(
+                        (sum, h) => sum + parseFloat(h.expected_goals || '0'),
+                        0
+                      )
+                    : 0;
+                return (
+                  <td
+                    key={player.id}
+                    className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300"
+                  >
+                    {xg.toFixed(2)}
+                  </td>
+                );
+              })}
             </tr>
             <tr>
               <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
-                ICT Index
+                xA (Expected Assists)
               </td>
-              {players.map((player, index) => (
-                <td
-                  key={player.id}
-                  className={getCellClassName(
-                    'ict',
-                    index,
-                    'whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300'
-                  )}
-                >
-                  {parseFloat(player.ict_index).toFixed(1)}
-                </td>
-              ))}
+              {players.map((player) => {
+                const summary = playerSummaries.get(player.id);
+                const xa =
+                  summary && summary.history.length > 0
+                    ? summary.history.reduce(
+                        (sum, h) => sum + parseFloat(h.expected_assists || '0'),
+                        0
+                      )
+                    : 0;
+                return (
+                  <td
+                    key={player.id}
+                    className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300"
+                  >
+                    {xa.toFixed(2)}
+                  </td>
+                );
+              })}
             </tr>
             <tr>
               <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
-                Influence
+                xGI (Expected Goal Involvements)
+              </td>
+              {players.map((player) => {
+                const summary = playerSummaries.get(player.id);
+                const xgi =
+                  summary && summary.history.length > 0
+                    ? summary.history.reduce(
+                        (sum, h) => sum + parseFloat(h.expected_goal_involvements || '0'),
+                        0
+                      )
+                    : 0;
+                return (
+                  <td
+                    key={player.id}
+                    className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300"
+                  >
+                    {xgi.toFixed(2)}
+                  </td>
+                );
+              })}
+            </tr>
+            <tr>
+              <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
+                Threat
               </td>
               {players.map((player, index) => (
                 <td
                   key={player.id}
                   className={getCellClassName(
-                    'influence',
+                    'threat',
                     index,
                     'whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300'
                   )}
                 >
-                  {parseFloat(player.influence).toFixed(1)}
+                  {parseFloat(player.threat).toFixed(1)}
                 </td>
               ))}
             </tr>
@@ -542,18 +686,245 @@ function ComparisonTable({ players, getTeamShortName }: ComparisonTableProps) {
             </tr>
             <tr>
               <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
-                Threat
+                Influence
               </td>
               {players.map((player, index) => (
                 <td
                   key={player.id}
                   className={getCellClassName(
-                    'threat',
+                    'influence',
                     index,
                     'whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300'
                   )}
                 >
-                  {parseFloat(player.threat).toFixed(1)}
+                  {parseFloat(player.influence).toFixed(1)}
+                </td>
+              ))}
+            </tr>
+
+            {/* Defensive Stats Section */}
+            <tr className="bg-[#1F1F26]">
+              <td
+                colSpan={players.length + 1}
+                className="px-4 py-2 text-sm font-bold text-white"
+              >
+                Defensive Stats
+              </td>
+            </tr>
+            <tr>
+              <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
+                Clean Sheets
+              </td>
+              {players.map((player, index) => (
+                <td
+                  key={player.id}
+                  className={getCellClassName(
+                    'cleanSheets',
+                    index,
+                    'whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300'
+                  )}
+                >
+                  {player.clean_sheets}
+                </td>
+              ))}
+            </tr>
+            <tr>
+              <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
+                Defensive Contribution
+              </td>
+              {players.map((player, index) => {
+                const summary = playerSummaries.get(player.id);
+                let defensiveContribution = player.clean_sheets;
+                if (summary && summary.history.length > 0) {
+                  // Check if defensive_contribution field exists
+                  const hasDefConField = summary.history.some(
+                    (h) => h.defensive_contribution !== undefined
+                  );
+                  if (hasDefConField) {
+                    defensiveContribution = summary.history.reduce(
+                      (sum, h) => sum + (h.defensive_contribution || 0),
+                      0
+                    );
+                  } else {
+                    defensiveContribution = summary.history.reduce(
+                      (sum, h) => sum + h.clean_sheets,
+                      0
+                    );
+                  }
+                }
+                return (
+                  <td
+                    key={player.id}
+                    className={getCellClassName(
+                      'defensiveContribution',
+                      index,
+                      'whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300'
+                    )}
+                  >
+                    {defensiveContribution}
+                  </td>
+                );
+              })}
+            </tr>
+            <tr>
+              <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
+                Goals Conceded
+              </td>
+              {players.map((player, index) => (
+                <td
+                  key={player.id}
+                  className={getCellClassName(
+                    'goalsConceded',
+                    index,
+                    'whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300'
+                  )}
+                >
+                  {player.goals_conceded}
+                </td>
+              ))}
+            </tr>
+            <tr>
+              <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
+                xDC (Expected Goals Conceded)
+              </td>
+              {players.map((player) => {
+                const summary = playerSummaries.get(player.id);
+                const xdc =
+                  summary && summary.history.length > 0
+                    ? summary.history.reduce(
+                        (sum, h) => sum + parseFloat(h.expected_goals_conceded || '0'),
+                        0
+                      )
+                    : 0;
+                return (
+                  <td
+                    key={player.id}
+                    className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300"
+                  >
+                    {xdc.toFixed(2)}
+                  </td>
+                );
+              })}
+            </tr>
+            <tr>
+              <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
+                DefCon (Total)
+              </td>
+              {players.map((player, index) => {
+                const summary = playerSummaries.get(player.id);
+                let defensiveContribution = player.clean_sheets;
+                if (summary && summary.history.length > 0) {
+                  // Check if defensive_contribution field exists
+                  const hasDefConField = summary.history.some(
+                    (h) => h.defensive_contribution !== undefined
+                  );
+                  if (hasDefConField) {
+                    defensiveContribution = summary.history.reduce(
+                      (sum, h) => sum + (h.defensive_contribution || 0),
+                      0
+                    );
+                  } else {
+                    defensiveContribution = summary.history.reduce(
+                      (sum, h) => sum + h.clean_sheets,
+                      0
+                    );
+                  }
+                }
+                return (
+                  <td
+                    key={player.id}
+                    className={getCellClassName(
+                      'defensiveContribution',
+                      index,
+                      'whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300'
+                    )}
+                  >
+                    {defensiveContribution}
+                  </td>
+                );
+              })}
+            </tr>
+            <tr>
+              <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
+                DefCon (Average)
+              </td>
+              {players.map((player) => {
+                const summary = playerSummaries.get(player.id);
+                const gamesPlayed =
+                  summary && summary.history.length > 0
+                    ? summary.history.filter((h) => h.minutes > 0).length
+                    : 0;
+                let defensiveContribution = player.clean_sheets;
+                if (summary && summary.history.length > 0) {
+                  // Check if defensive_contribution field exists
+                  const hasDefConField = summary.history.some(
+                    (h) => h.defensive_contribution !== undefined
+                  );
+                  if (hasDefConField) {
+                    defensiveContribution = summary.history.reduce(
+                      (sum, h) => sum + (h.defensive_contribution || 0),
+                      0
+                    );
+                  } else {
+                    defensiveContribution = summary.history.reduce(
+                      (sum, h) => sum + h.clean_sheets,
+                      0
+                    );
+                  }
+                }
+                const avgDefensiveContribution =
+                  gamesPlayed > 0 ? (defensiveContribution / gamesPlayed).toFixed(2) : '0.00';
+                return (
+                  <td
+                    key={player.id}
+                    className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300"
+                  >
+                    {avgDefensiveContribution}
+                  </td>
+                );
+              })}
+            </tr>
+
+            {/* Bonus Stats Section */}
+            <tr className="bg-[#1F1F26]">
+              <td
+                colSpan={players.length + 1}
+                className="px-4 py-2 text-sm font-bold text-white"
+              >
+                Bonus Stats
+              </td>
+            </tr>
+            <tr>
+              <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
+                Bonus Points
+              </td>
+              {players.map((player, index) => (
+                <td
+                  key={player.id}
+                  className={getCellClassName(
+                    'bonus',
+                    index,
+                    'whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300'
+                  )}
+                >
+                  {player.bonus}
+                </td>
+              ))}
+            </tr>
+            <tr>
+              <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
+                BPS (Bonus Points System)
+              </td>
+              {players.map((player, index) => (
+                <td
+                  key={player.id}
+                  className={getCellClassName(
+                    'bps',
+                    index,
+                    'whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300'
+                  )}
+                >
+                  {player.bps}
                 </td>
               ))}
             </tr>

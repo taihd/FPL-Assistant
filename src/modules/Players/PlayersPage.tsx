@@ -1,25 +1,52 @@
 import { useEffect, useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '@/context/AppContext';
 import { useFPLApi } from '@/hooks/useFPLApi';
-import { PlayerCard } from './PlayerCard';
-import { PlayerCompare } from './PlayerCompare';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
+import { ComparisonFooter } from '@/components/ComparisonFooter';
 import type { Player, Team, ElementType } from '@/types/fpl';
-import { cn } from '@/lib/utils';
+import { cn, formatPrice } from '@/lib/utils';
+
+type SortField =
+  | 'player'
+  | 'price'
+  | 'points'
+  | 'goals'
+  | 'assists'
+  | 'cleanSheets'
+  | 'form'
+  | 'ict'
+  | 'luck';
+type SortDirection = 'asc' | 'desc';
+
+const getPositionColor = (positionId: number): string => {
+  switch (positionId) {
+    case 1: // Goalkeeper
+      return 'bg-slate-500/20 text-slate-400 border-slate-500/30';
+    case 2: // Defender
+      return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
+    case 3: // Midfielder
+      return 'bg-violet-500/20 text-violet-400 border-violet-500/30';
+    case 4: // Forward
+      return 'bg-red-500/20 text-red-400 border-red-500/30';
+    default:
+      return 'bg-slate-500/20 text-slate-400 border-slate-500/30';
+  }
+};
 
 export function PlayersPage() {
+  const navigate = useNavigate();
   const { setScreen, setDataSnapshot } = useAppContext();
   const { fetchBootstrapData } = useFPLApi();
 
   const [players, setPlayers] = useState<Player[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [positions, setPositions] = useState<ElementType[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedPosition, setSelectedPosition] = useState<number | null>(null);
-  const [selectedTeam, setSelectedTeam] = useState<number | null>(null);
-  const [sortBy, setSortBy] = useState<'points' | 'price' | 'form' | 'ownership'>('points');
+  const [selectedPositions, setSelectedPositions] = useState<number[]>([]);
+  const [selectedTeams, setSelectedTeams] = useState<number[]>([]);
+  const [sortField, setSortField] = useState<SortField>('points');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [selectedPlayerIds, setSelectedPlayerIds] = useState<number[]>([]);
-  const [showCompare, setShowCompare] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -63,72 +90,119 @@ export function PlayersPage() {
   const filteredPlayers = useMemo(() => {
     let filtered = players;
 
-    // Search filter
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (player) =>
-          player.web_name.toLowerCase().includes(query) ||
-          player.first_name.toLowerCase().includes(query) ||
-          player.second_name.toLowerCase().includes(query)
+    // Position filter (multi-select)
+    if (selectedPositions.length > 0) {
+      filtered = filtered.filter((player) =>
+        selectedPositions.includes(player.element_type)
       );
     }
 
-    // Position filter
-    if (selectedPosition !== null) {
-      filtered = filtered.filter((player) => player.element_type === selectedPosition);
-    }
-
-    // Team filter
-    if (selectedTeam !== null) {
-      filtered = filtered.filter((player) => player.team === selectedTeam);
+    // Team filter (multi-select)
+    if (selectedTeams.length > 0) {
+      filtered = filtered.filter((player) => selectedTeams.includes(player.team));
     }
 
     // Sort
     filtered = [...filtered].sort((a, b) => {
-      switch (sortBy) {
-        case 'points':
-          return b.total_points - a.total_points;
+      let comparison = 0;
+
+      switch (sortField) {
+        case 'player':
+          comparison = a.web_name.localeCompare(b.web_name);
+          break;
         case 'price':
-          return b.now_cost - a.now_cost;
+          comparison = a.now_cost - b.now_cost;
+          break;
+        case 'points':
+          comparison = a.total_points - b.total_points;
+          break;
+        case 'goals':
+          comparison = a.goals_scored - b.goals_scored;
+          break;
+        case 'assists':
+          comparison = a.assists - b.assists;
+          break;
+        case 'cleanSheets':
+          comparison = a.clean_sheets - b.clean_sheets;
+          break;
         case 'form':
-          return parseFloat(b.form || '0') - parseFloat(a.form || '0');
-        case 'ownership':
-          return (
-            parseFloat(b.selected_by_percent) - parseFloat(a.selected_by_percent)
-          );
+          comparison = parseFloat(a.form || '0') - parseFloat(b.form || '0');
+          break;
+        case 'ict':
+          comparison = parseFloat(a.ict_index || '0') - parseFloat(b.ict_index || '0');
+          break;
+        case 'luck':
+          // Luck calculation: points - expected points (simplified)
+          // For now, we'll use a placeholder calculation
+          const aLuck = a.total_points - parseFloat(a.ict_index || '0') * 0.5;
+          const bLuck = b.total_points - parseFloat(b.ict_index || '0') * 0.5;
+          comparison = aLuck - bLuck;
+          break;
         default:
           return 0;
       }
+
+      return sortDirection === 'asc' ? comparison : -comparison;
     });
 
     return filtered;
-  }, [players, searchQuery, selectedPosition, selectedTeam, sortBy]);
+  }, [players, selectedPositions, selectedTeams, sortField, sortDirection]);
 
-  // Get selected players with their team and position data
-  const selectedPlayersData = useMemo(() => {
-    return selectedPlayerIds
-      .map((playerId) => {
-        const player = players.find((p) => p.id === playerId);
-        if (!player) return null;
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('desc');
+    }
+  };
 
-        const team = teams.find((t) => t.id === player.team);
-        const position = positions.find((p) => p.id === player.element_type);
+  const togglePosition = (positionId: number) => {
+    setSelectedPositions((prev) =>
+      prev.includes(positionId)
+        ? prev.filter((id) => id !== positionId)
+        : [...prev, positionId]
+    );
+  };
 
-        if (!team || !position) return null;
-
-        return { player, team, position };
-      })
-      .filter((item): item is { player: Player; team: Team; position: ElementType } =>
-        item !== null
-      );
-  }, [selectedPlayerIds, players, teams, positions]);
+  const toggleTeam = (teamId: number) => {
+    setSelectedTeams((prev) =>
+      prev.includes(teamId)
+        ? prev.filter((id) => id !== teamId)
+        : [...prev, teamId]
+    );
+  };
 
   const togglePlayerSelection = (playerId: number) => {
     setSelectedPlayerIds((prev) =>
       prev.includes(playerId)
         ? prev.filter((id) => id !== playerId)
         : [...prev, playerId]
+    );
+  };
+
+  const handleCompareClick = () => {
+    if (selectedPlayerIds.length > 0) {
+      navigate(`/my-team/compare?players=${selectedPlayerIds.join(',')}`);
+    }
+  };
+
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) {
+      return (
+        <svg className="ml-1 h-3 w-3 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+        </svg>
+      );
+    }
+    return sortDirection === 'asc' ? (
+      <svg className="ml-1 h-3 w-3 text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+      </svg>
+    ) : (
+      <svg className="ml-1 h-3 w-3 text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+      </svg>
     );
   };
 
@@ -148,248 +222,297 @@ export function PlayersPage() {
         <div className="rounded-lg border border-red-500/50 bg-red-500/10 p-6">
           <p className="mb-2 font-semibold text-red-400">Error loading players</p>
           <p className="mb-4 text-sm text-red-300">{error.message}</p>
-          <button
-            onClick={() => {
-              setError(null);
-              setIsLoading(true);
-              const loadData = async () => {
-                try {
-                  const bootstrap = await fetchBootstrapData();
-                  setPlayers(bootstrap.elements);
-                  setTeams(bootstrap.teams);
-                  setPositions(bootstrap.element_types);
-                  setDataSnapshot({
-                    players: bootstrap.elements,
-                    teams: bootstrap.teams,
-                    positions: bootstrap.element_types,
-                  });
-                  setError(null);
-                } catch (err) {
-                  const errorMessage =
-                    err instanceof Error
-                      ? err
-                      : new Error('Failed to load players data');
-                  setError(errorMessage);
-                } finally {
-                  setIsLoading(false);
-                }
-              };
-              loadData();
-            }}
-            className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700"
-          >
-            Retry
-          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div>
+    <div className={selectedPlayerIds.length > 0 ? 'pb-20' : ''}>
       <h1 className="mb-6 text-3xl font-bold text-white">Players</h1>
 
-      {/* Filters and Controls */}
+      {/* Filters */}
       <div className="mb-6 space-y-4 rounded-lg border border-dark-border bg-[#25252B] p-4">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {/* Search */}
-          <div>
-            <label
-              htmlFor="player-search"
-              className="mb-2 block text-sm font-medium text-white"
-            >
-              Search
-            </label>
-            <input
-              id="player-search"
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search players..."
-              className="w-full rounded-md border border-dark-border bg-[#2A2A35] px-3 py-2 text-sm text-white placeholder:text-slate-400 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
-            />
-          </div>
-
-          {/* Position Filter */}
-          <div>
-            <label
-              htmlFor="position-select"
-              className="mb-2 block text-sm font-medium text-white"
-            >
-              Position
-            </label>
-            <select
-              id="position-select"
-              value={selectedPosition ?? ''}
-              onChange={(e) =>
-                setSelectedPosition(
-                  e.target.value ? parseInt(e.target.value, 10) : null
-                )
-              }
-              className="w-full rounded-md border border-dark-border bg-[#2A2A35] px-3 py-2 text-sm text-white focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
-            >
-              <option value="" className="bg-[#2A2A35] text-white">All Positions</option>
-              {positions.map((position) => (
-                <option key={position.id} value={position.id} className="bg-[#2A2A35] text-white">
-                  {position.plural_name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Team Filter */}
-          <div>
-            <label
-              htmlFor="team-select"
-              className="mb-2 block text-sm font-medium text-white"
-            >
-              Team
-            </label>
-            <select
-              id="team-select"
-              value={selectedTeam ?? ''}
-              onChange={(e) =>
-                setSelectedTeam(e.target.value ? parseInt(e.target.value, 10) : null)
-              }
-              className="w-full rounded-md border border-dark-border bg-[#2A2A35] px-3 py-2 text-sm text-white focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
-            >
-              <option value="" className="bg-[#2A2A35] text-white">All Teams</option>
-              {teams.map((team) => (
-                <option key={team.id} value={team.id} className="bg-[#2A2A35] text-white">
-                  {team.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Sort By */}
-          <div>
-            <label
-              htmlFor="sort-select"
-              className="mb-2 block text-sm font-medium text-white"
-            >
-              Sort By
-            </label>
-            <select
-              id="sort-select"
-              value={sortBy}
-              onChange={(e) =>
-                setSortBy(
-                  e.target.value as 'points' | 'price' | 'form' | 'ownership'
-                )
-              }
-              className="w-full rounded-md border border-dark-border bg-[#2A2A35] px-3 py-2 text-sm text-white focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
-            >
-              <option value="points" className="bg-[#2A2A35] text-white">Total Points</option>
-              <option value="price" className="bg-[#2A2A35] text-white">Price</option>
-              <option value="form" className="bg-[#2A2A35] text-white">Form</option>
-              <option value="ownership" className="bg-[#2A2A35] text-white">Ownership %</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Comparison Controls */}
-        {selectedPlayerIds.length > 0 && (
-          <div className="flex items-center gap-2 border-t border-dark-border pt-4">
-            <button
-              onClick={() => setShowCompare(!showCompare)}
-              className={cn(
-                'rounded-md px-4 py-2 text-sm font-medium transition-colors',
-                showCompare
-                  ? 'bg-violet-500 text-white hover:bg-violet-600'
-                  : 'border border-dark-border bg-[#2A2A35] text-white hover:bg-[#2F2F3A]'
-              )}
-            >
-              {showCompare ? 'Hide' : 'Show'} Comparison ({selectedPlayerIds.length})
-            </button>
-            <button
-              onClick={() => {
-                setSelectedPlayerIds([]);
-                setShowCompare(false);
-              }}
-              className="rounded-md border border-dark-border bg-[#2A2A35] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#2F2F3A]"
-            >
-              Clear Selection
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Comparison View */}
-      {showCompare && selectedPlayersData.length > 0 && (
-        <div className="mb-6">
-          <PlayerCompare players={selectedPlayersData} />
-        </div>
-      )}
-
-      {/* Players Grid */}
-      {filteredPlayers.length === 0 ? (
-        <div className="rounded-lg border border-dark-border bg-[#25252B] p-8 text-center">
-          <p className="text-slate-300">No players found matching your filters.</p>
-        </div>
-      ) : (
+        {/* Position Filter */}
         <div>
-          <div className="mb-4 text-sm text-slate-300">
-            Showing {filteredPlayers.length} player{filteredPlayers.length !== 1 ? 's' : ''}
-          </div>
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {filteredPlayers.map((player) => {
-              const team = teams.find((t) => t.id === player.team);
-              const position = positions.find((p) => p.id === player.element_type);
-
-              if (!team || !position) return null;
-
+          <div className="mb-2 text-sm font-medium text-white">Position</div>
+          <div className="flex flex-wrap gap-2">
+            {positions.map((position) => {
+              const isSelected = selectedPositions.includes(position.id);
               return (
-                <div key={player.id} className="relative">
-                  <PlayerCard player={player} team={team} position={position} />
-                  <button
-                    onClick={() => togglePlayerSelection(player.id)}
-                    className={cn(
-                      'absolute right-2 top-2 rounded-full p-1.5 transition-colors',
-                      selectedPlayerIds.includes(player.id)
-                        ? 'bg-violet-500 text-white hover:bg-violet-600'
-                        : 'bg-[#2A2A35] text-slate-400 hover:bg-[#2F2F3A] hover:text-white'
-                    )}
-                    title={
-                      selectedPlayerIds.includes(player.id)
-                        ? 'Remove from comparison'
-                        : 'Add to comparison'
-                    }
-                  >
-                    {selectedPlayerIds.includes(player.id) ? (
-                      <svg
-                        className="h-4 w-4"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                    ) : (
-                      <svg
-                        className="h-4 w-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 4v16m8-8H4"
-                        />
-                      </svg>
-                    )}
-                  </button>
-                </div>
+                <button
+                  key={position.id}
+                  onClick={() => togglePosition(position.id)}
+                  className={cn(
+                    'rounded border px-3 py-1.5 text-sm font-medium transition-colors',
+                    getPositionColor(position.id),
+                    isSelected && 'ring-2 ring-violet-500'
+                  )}
+                >
+                  {position.plural_name_short}
+                </button>
               );
             })}
           </div>
         </div>
-      )}
+
+        {/* Team Filter */}
+        <div>
+          <div className="mb-2 text-sm font-medium text-white">Team</div>
+          <div className="flex flex-wrap gap-2">
+            {teams.map((team) => {
+              const isSelected = selectedTeams.includes(team.id);
+              return (
+                <button
+                  key={team.id}
+                  onClick={() => toggleTeam(team.id)}
+                  className={cn(
+                    'rounded border border-dark-border px-3 py-1.5 text-sm font-medium transition-colors',
+                    isSelected
+                      ? 'bg-violet-500/20 text-violet-400 border-violet-500/50'
+                      : 'bg-[#2A2A35] text-slate-300 hover:bg-[#2F2F3A] hover:text-white'
+                  )}
+                >
+                  {team.short_name}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Players Table */}
+      <div className="rounded-lg border border-dark-border bg-[#25252B] overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-dark-border">
+            <thead className="bg-[#2A2A35]">
+              <tr>
+                <th
+                  className="cursor-pointer px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-400 hover:text-white transition-colors"
+                  onClick={() => handleSort('player')}
+                >
+                  <div className="flex items-center">
+                    Player
+                    <SortIcon field="player" />
+                  </div>
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-400">
+                  Actions
+                </th>
+                <th
+                  className="cursor-pointer px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-400 hover:text-white transition-colors"
+                  onClick={() => handleSort('player')}
+                >
+                  <div className="flex items-center">
+                    Pos
+                    <SortIcon field="player" />
+                  </div>
+                </th>
+                <th
+                  className="cursor-pointer px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-slate-400 hover:text-white transition-colors"
+                  onClick={() => handleSort('price')}
+                >
+                  <div className="flex items-center justify-center">
+                    Price
+                    <SortIcon field="price" />
+                  </div>
+                </th>
+                <th
+                  className="cursor-pointer px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-slate-400 hover:text-white transition-colors"
+                  onClick={() => handleSort('points')}
+                >
+                  <div className="flex items-center justify-center">
+                    Pts
+                    <SortIcon field="points" />
+                  </div>
+                </th>
+                <th
+                  className="cursor-pointer px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-slate-400 hover:text-white transition-colors"
+                  onClick={() => handleSort('goals')}
+                >
+                  <div className="flex items-center justify-center">
+                    G
+                    <SortIcon field="goals" />
+                  </div>
+                </th>
+                <th
+                  className="cursor-pointer px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-slate-400 hover:text-white transition-colors"
+                  onClick={() => handleSort('assists')}
+                >
+                  <div className="flex items-center justify-center">
+                    A
+                    <SortIcon field="assists" />
+                  </div>
+                </th>
+                <th
+                  className="cursor-pointer px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-slate-400 hover:text-white transition-colors"
+                  onClick={() => handleSort('cleanSheets')}
+                >
+                  <div className="flex items-center justify-center">
+                    CS
+                    <SortIcon field="cleanSheets" />
+                  </div>
+                </th>
+                <th
+                  className="cursor-pointer px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-slate-400 hover:text-white transition-colors"
+                  onClick={() => handleSort('form')}
+                >
+                  <div className="flex items-center justify-center">
+                    Form
+                    <SortIcon field="form" />
+                  </div>
+                </th>
+                <th
+                  className="cursor-pointer px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-slate-400 hover:text-white transition-colors"
+                  onClick={() => handleSort('ict')}
+                >
+                  <div className="flex items-center justify-center">
+                    ICT
+                    <SortIcon field="ict" />
+                  </div>
+                </th>
+                <th
+                  className="cursor-pointer px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-slate-400 hover:text-white transition-colors"
+                  onClick={() => handleSort('luck')}
+                >
+                  <div className="flex items-center justify-center">
+                    Luck
+                    <SortIcon field="luck" />
+                  </div>
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-dark-border bg-[#25252B]">
+              {filteredPlayers.length === 0 ? (
+                <tr>
+                  <td colSpan={11} className="px-4 py-8 text-center text-slate-300">
+                    No players found matching your filters.
+                  </td>
+                </tr>
+              ) : (
+                filteredPlayers.map((player) => {
+                  const team = teams.find((t) => t.id === player.team);
+                  const position = positions.find((p) => p.id === player.element_type);
+                  if (!team || !position) return null;
+
+                  const isSelected = selectedPlayerIds.includes(player.id);
+                  const form = parseFloat(player.form || '0');
+                  const ictIndex = parseFloat(player.ict_index || '0');
+                  // Simplified luck calculation
+                  const luck = player.total_points - ictIndex * 0.5;
+
+                  return (
+                    <tr
+                      key={player.id}
+                      className="hover:bg-[#2A2A35] transition-colors cursor-pointer"
+                      onClick={() => navigate(`/my-team/player/${player.id}`)}
+                    >
+                      <td className="whitespace-nowrap px-4 py-3">
+                        <div>
+                          <div className="font-medium text-white">{player.web_name}</div>
+                          <div className="text-xs text-slate-400">{team.short_name}</div>
+                        </div>
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              togglePlayerSelection(player.id);
+                            }}
+                            className={cn(
+                              'rounded p-1 transition-colors',
+                              isSelected
+                                ? 'text-violet-400 hover:text-violet-300'
+                                : 'text-slate-400 hover:text-slate-300'
+                            )}
+                            title={isSelected ? 'Remove from comparison' : 'Add to comparison'}
+                          >
+                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/my-team/player/${player.id}`);
+                            }}
+                            className="text-slate-400 hover:text-white transition-colors"
+                            title="View player details"
+                          >
+                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                          </button>
+                        </div>
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3">
+                        <span
+                          className={cn(
+                            'rounded border px-2 py-1 text-xs font-medium',
+                            getPositionColor(player.element_type)
+                          )}
+                        >
+                          {position.singular_name_short}
+                        </span>
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300">
+                        {formatPrice(player.now_cost)}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-center text-sm font-semibold text-white">
+                        {player.total_points}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300">
+                        {player.goals_scored}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300">
+                        {player.assists}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300">
+                        {player.clean_sheets}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300">
+                        {form > 0 ? form.toFixed(1) : '0.0'}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300">
+                        {ictIndex.toFixed(1)}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-center text-sm">
+                        <span
+                          className={cn(
+                            luck >= 0 ? 'text-green-400' : 'text-red-400'
+                          )}
+                        >
+                          {luck >= 0 ? '+' : ''}
+                          {luck.toFixed(2)}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Comparison Footer */}
+      <ComparisonFooter
+        selectedItems={selectedPlayerIds.map((playerId) => {
+          const player = players.find((p) => p.id === playerId);
+          const position = positions.find((p) => p.id === player?.element_type);
+          return {
+            id: playerId,
+            name: player?.web_name || `Player ${playerId}`,
+            label: position?.singular_name_short,
+          };
+        })}
+        onRemove={togglePlayerSelection}
+        onClearAll={() => setSelectedPlayerIds([])}
+        onCompare={handleCompareClick}
+        type="players"
+        positions={positions}
+      />
     </div>
   );
 }

@@ -29,6 +29,12 @@ export interface PlayerHistory {
   selected: number;
   transfers_in: number;
   transfers_out: number;
+  defensive_contribution?: number; // Optional field that may exist in API
+  expected_goals?: string;
+  expected_assists?: string;
+  expected_goal_involvements?: string;
+  expected_goals_conceded?: string;
+  starts?: number;
 }
 
 export interface PlayerFixture {

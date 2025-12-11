@@ -4,6 +4,7 @@ import { useFPLApi } from '@/hooks/useFPLApi';
 import { ClubCard } from './ClubCard';
 import { ClubCompare } from './ClubCompare';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
+import { ComparisonFooter } from '@/components/ComparisonFooter';
 import type { Team, Fixture } from '@/types/fpl';
 import { cn } from '@/lib/utils';
 
@@ -15,7 +16,6 @@ export function ClubsPage() {
   const [fixtures, setFixtures] = useState<Fixture[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTeams, setSelectedTeams] = useState<number[]>([]);
-  const [showCompare, setShowCompare] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -83,6 +83,13 @@ export function ClubsPage() {
     );
   };
 
+  const handleCompareClick = () => {
+    if (selectedTeams.length > 0) {
+      // For teams, we'll show comparison inline or navigate to a comparison page
+      // For now, we'll keep it inline but could add navigation later
+    }
+  };
+
   if (isLoading) {
     return (
       <div>
@@ -138,56 +145,29 @@ export function ClubsPage() {
   }
 
   return (
-    <div>
+    <div className={selectedTeams.length > 0 ? 'pb-20' : ''}>
       <h1 className="mb-6 text-3xl font-bold text-white">Premier League Clubs</h1>
 
-      {/* Search and Compare Controls */}
-      <div className="mb-6 flex flex-col gap-4 rounded-lg border border-dark-border bg-[#25252B] p-4 sm:flex-row">
-        <div className="flex-1">
-          <label
-            htmlFor="club-search"
-            className="mb-2 block text-sm font-medium text-white"
-          >
-            Search Clubs
-          </label>
-          <input
-            id="club-search"
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search by team name..."
-            className="w-full rounded-md border border-dark-border bg-[#2A2A35] px-3 py-2 text-sm text-white placeholder:text-slate-400 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
-          />
-        </div>
-
-        {selectedTeams.length > 0 && (
-          <div className="flex items-end gap-2">
-            <button
-              onClick={() => setShowCompare(!showCompare)}
-              className={cn(
-                'rounded-md px-4 py-2 text-sm font-medium transition-colors',
-                showCompare
-                  ? 'bg-violet-500 text-white hover:bg-violet-600'
-                  : 'border border-dark-border bg-[#2A2A35] text-white hover:bg-[#2F2F3A]'
-              )}
-            >
-              {showCompare ? 'Hide' : 'Show'} Comparison ({selectedTeams.length})
-            </button>
-            <button
-              onClick={() => {
-                setSelectedTeams([]);
-                setShowCompare(false);
-              }}
-              className="rounded-md border border-dark-border bg-[#2A2A35] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#2F2F3A]"
-            >
-              Clear
-            </button>
-          </div>
-        )}
+      {/* Search */}
+      <div className="mb-6 rounded-lg border border-dark-border bg-[#25252B] p-4">
+        <label
+          htmlFor="club-search"
+          className="mb-2 block text-sm font-medium text-white"
+        >
+          Search Clubs
+        </label>
+        <input
+          id="club-search"
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search by team name..."
+          className="w-full rounded-md border border-dark-border bg-[#2A2A35] px-3 py-2 text-sm text-white placeholder:text-slate-400 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
+        />
       </div>
 
-      {/* Comparison View */}
-      {showCompare && selectedTeamsData.length > 0 && (
+      {/* Comparison View - Always show when teams are selected */}
+      {selectedTeamsData.length > 0 && (
         <div className="mb-6">
           <ClubCompare teams={selectedTeamsData} />
         </div>
@@ -249,6 +229,23 @@ export function ClubsPage() {
           ))}
         </div>
       )}
+
+      {/* Comparison Footer */}
+      <ComparisonFooter
+        selectedItems={selectedTeams.map((teamId) => {
+          const team = teams.find((t) => t.id === teamId);
+          return {
+            id: teamId,
+            name: team?.name || `Team ${teamId}`,
+            label: team?.short_name,
+          };
+        })}
+        onRemove={toggleTeamSelection}
+        onClearAll={() => setSelectedTeams([])}
+        onCompare={handleCompareClick}
+        type="teams"
+        teams={teams}
+      />
     </div>
   );
 }

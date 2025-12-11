@@ -41,6 +41,10 @@ export function PlayerCompare({ players }: PlayerCompareProps) {
         return player.assists;
       case 'ict':
         return parseFloat(player.ict_index || '0');
+      case 'minutes':
+        return player.minutes;
+      case 'cleanSheets':
+        return player.clean_sheets;
       default:
         return 0;
     }
@@ -86,6 +90,16 @@ export function PlayerCompare({ players }: PlayerCompareProps) {
     (item) => getStatValue(item, 'ict'),
     isHigherBetter('ict')
   );
+  const minutesBestWorst = findBestAndWorst(
+    players,
+    (item) => getStatValue(item, 'minutes'),
+    isHigherBetter('minutes')
+  );
+  const cleanSheetsBestWorst = findBestAndWorst(
+    players,
+    (item) => getStatValue(item, 'cleanSheets'),
+    isHigherBetter('cleanSheets')
+  );
 
   const getCellClassName = (
     statBestWorst: { bestIndices: number[]; worstIndices: number[] },
@@ -117,6 +131,8 @@ export function PlayerCompare({ players }: PlayerCompareProps) {
               <th className="px-4 py-2 text-center font-semibold text-slate-400">Own%</th>
               <th className="px-4 py-2 text-center font-semibold text-slate-400">Goals</th>
               <th className="px-4 py-2 text-center font-semibold text-slate-400">Assists</th>
+              <th className="px-4 py-2 text-center font-semibold text-slate-400">Clean Sheets</th>
+              <th className="px-4 py-2 text-center font-semibold text-slate-400">Minutes</th>
               <th className="px-4 py-2 text-center font-semibold text-slate-400">ICT</th>
             </tr>
           </thead>
@@ -201,6 +217,24 @@ export function PlayerCompare({ players }: PlayerCompareProps) {
                     )}
                   >
                     {player.assists}
+                  </td>
+                  <td
+                    className={getCellClassName(
+                      cleanSheetsBestWorst,
+                      index,
+                      'px-4 py-2 text-center text-slate-300'
+                    )}
+                  >
+                    {player.clean_sheets}
+                  </td>
+                  <td
+                    className={getCellClassName(
+                      minutesBestWorst,
+                      index,
+                      'px-4 py-2 text-center text-slate-300'
+                    )}
+                  >
+                    {player.minutes.toLocaleString()}
                   </td>
                   <td
                     className={getCellClassName(
