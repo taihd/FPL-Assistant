@@ -101,7 +101,7 @@ export function PlayerComparePage() {
       <div>
         <button
           onClick={() => navigate('/my-team')}
-          className="mb-4 text-sm text-slate-600 hover:text-slate-900"
+          className="mb-4 text-sm text-slate-300 hover:text-white"
         >
           ← Back to My Team
         </button>
@@ -115,13 +115,13 @@ export function PlayerComparePage() {
       <div>
         <button
           onClick={() => navigate('/my-team')}
-          className="mb-4 text-sm text-slate-600 hover:text-slate-900"
+          className="mb-4 text-sm text-slate-300 hover:text-white"
         >
           ← Back to My Team
         </button>
-        <div className="rounded-lg border border-red-200 bg-red-50 p-6">
-          <h2 className="mb-2 text-lg font-semibold text-red-900">Error Loading Comparison</h2>
-          <p className="mb-4 text-sm text-red-800">
+        <div className="rounded-lg border border-red-500/50 bg-red-500/10 p-6">
+          <h2 className="mb-2 text-lg font-semibold text-red-400">Error Loading Comparison</h2>
+          <p className="mb-4 text-sm text-red-300">
             {error?.message || 'No players found for comparison'}
           </p>
           <button
@@ -140,30 +140,30 @@ export function PlayerComparePage() {
       {/* Back Button */}
       <button
         onClick={() => navigate('/my-team')}
-        className="mb-4 text-sm text-slate-600 hover:text-slate-900"
+        className="mb-4 text-sm text-slate-300 hover:text-white"
       >
         ← Back to My Team
       </button>
 
-      <h1 className="mb-6 text-3xl font-bold text-slate-900">Player Comparison</h1>
+      <h1 className="mb-6 text-3xl font-bold text-white">Player Comparison</h1>
 
       {/* Comparison Table */}
-      <div className="mb-6 rounded-lg border bg-white p-6 shadow-sm">
+      <div className="mb-6 rounded-lg border border-dark-border bg-[#25252B] p-6">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-200">
-            <thead className="bg-slate-50">
+          <table className="min-w-full divide-y divide-dark-border">
+            <thead className="bg-[#2A2A35]">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-400">
                   Stat
                 </th>
                 {players.map((player) => (
                   <th
                     key={player.id}
-                    className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-slate-500"
+                    className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-slate-400"
                   >
                     <div>
-                      <div className="font-semibold text-slate-900">{player.web_name}</div>
-                      <div className="text-xs font-normal text-slate-500">
+                      <div className="font-semibold text-white">{player.web_name}</div>
+                      <div className="text-xs font-normal text-slate-400">
                         {getTeamShortName(player.team)}
                       </div>
                     </div>
@@ -171,171 +171,171 @@ export function PlayerComparePage() {
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200 bg-white">
+            <tbody className="divide-y divide-dark-border bg-[#25252B]">
               <tr>
-                <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-slate-900">
+                <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
                   Position
                 </td>
                 {players.map((player) => (
                   <td
                     key={player.id}
-                    className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-600"
+                    className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300"
                   >
                     {getPositionFullName(player.element_type)}
                   </td>
                 ))}
               </tr>
               <tr>
-                <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-slate-900">
+                <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
                   Price
                 </td>
                 {players.map((player) => (
                   <td
                     key={player.id}
-                    className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-600"
+                    className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300"
                   >
                     {formatPrice(player.now_cost)}
                   </td>
                 ))}
               </tr>
               <tr>
-                <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-slate-900">
+                <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
                   Total Points
                 </td>
                 {players.map((player) => (
                   <td
                     key={player.id}
-                    className="whitespace-nowrap px-4 py-3 text-center text-sm font-semibold text-slate-900"
+                    className="whitespace-nowrap px-4 py-3 text-center text-sm font-semibold text-white"
                   >
                     {player.total_points}
                   </td>
                 ))}
               </tr>
               <tr>
-                <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-slate-900">
+                <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
                   Points per Game
                 </td>
                 {players.map((player) => (
                   <td
                     key={player.id}
-                    className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-600"
+                    className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300"
                   >
                     {parseFloat(player.points_per_game || '0').toFixed(1)}
                   </td>
                 ))}
               </tr>
               <tr>
-                <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-slate-900">
+                <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
                   Form
                 </td>
                 {players.map((player) => (
                   <td
                     key={player.id}
-                    className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-600"
+                    className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300"
                   >
                     {player.form || 'N/A'}
                   </td>
                 ))}
               </tr>
               <tr>
-                <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-slate-900">
+                <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
                   Ownership
                 </td>
                 {players.map((player) => (
                   <td
                     key={player.id}
-                    className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-600"
+                    className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300"
                   >
                     {parseFloat(player.selected_by_percent).toFixed(1)}%
                   </td>
                 ))}
               </tr>
               <tr>
-                <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-slate-900">
+                <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
                   Goals
                 </td>
                 {players.map((player) => (
                   <td
                     key={player.id}
-                    className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-600"
+                    className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300"
                   >
                     {player.goals_scored}
                   </td>
                 ))}
               </tr>
               <tr>
-                <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-slate-900">
+                <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
                   Assists
                 </td>
                 {players.map((player) => (
                   <td
                     key={player.id}
-                    className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-600"
+                    className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300"
                   >
                     {player.assists}
                   </td>
                 ))}
               </tr>
               <tr>
-                <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-slate-900">
+                <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
                   Clean Sheets
                 </td>
                 {players.map((player) => (
                   <td
                     key={player.id}
-                    className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-600"
+                    className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300"
                   >
                     {player.clean_sheets}
                   </td>
                 ))}
               </tr>
               <tr>
-                <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-slate-900">
+                <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
                   ICT Index
                 </td>
                 {players.map((player) => (
                   <td
                     key={player.id}
-                    className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-600"
+                    className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300"
                   >
                     {parseFloat(player.ict_index).toFixed(1)}
                   </td>
                 ))}
               </tr>
               <tr>
-                <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-slate-900">
+                <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
                   Influence
                 </td>
                 {players.map((player) => (
                   <td
                     key={player.id}
-                    className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-600"
+                    className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300"
                   >
                     {parseFloat(player.influence).toFixed(1)}
                   </td>
                 ))}
               </tr>
               <tr>
-                <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-slate-900">
+                <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
                   Creativity
                 </td>
                 {players.map((player) => (
                   <td
                     key={player.id}
-                    className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-600"
+                    className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300"
                   >
                     {parseFloat(player.creativity).toFixed(1)}
                   </td>
                 ))}
               </tr>
               <tr>
-                <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-slate-900">
+                <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
                   Threat
                 </td>
                 {players.map((player) => (
                   <td
                     key={player.id}
-                    className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-600"
+                    className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300"
                   >
                     {parseFloat(player.threat).toFixed(1)}
                   </td>
@@ -348,8 +348,8 @@ export function PlayerComparePage() {
 
       {/* Upcoming Fixtures Comparison */}
       {players.length > 0 && (
-        <div className="rounded-lg border bg-white p-6 shadow-sm">
-          <h2 className="mb-4 text-xl font-semibold text-slate-900">Upcoming Fixtures</h2>
+        <div className="rounded-lg border border-dark-border bg-[#25252B] p-6">
+          <h2 className="mb-4 text-xl font-semibold text-white">Upcoming Fixtures</h2>
           <div className="space-y-4">
             {players.map((player) => {
               const summary = playerSummaries.get(player.id);
@@ -363,8 +363,8 @@ export function PlayerComparePage() {
               if (upcomingFixtures.length === 0) return null;
 
               return (
-                <div key={player.id} className="border-t pt-4 first:border-t-0 first:pt-0">
-                  <h3 className="mb-2 text-sm font-semibold text-slate-900">
+                <div key={player.id} className="border-t border-dark-border pt-4 first:border-t-0 first:pt-0">
+                  <h3 className="mb-2 text-sm font-semibold text-white">
                     {player.web_name} ({getTeamShortName(player.team)})
                   </h3>
                   <div className="flex flex-wrap gap-2">
@@ -380,17 +380,17 @@ export function PlayerComparePage() {
                       const getDifficultyColor = (difficulty: number): string => {
                         switch (difficulty) {
                           case 1:
-                            return 'bg-lime-100 text-lime-800 border-lime-300';
+                            return 'bg-lime-500/20 text-lime-400 border-lime-500/30';
                           case 2:
-                            return 'bg-green-100 text-green-800 border-green-300';
+                            return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
                           case 3:
-                            return 'bg-yellow-100 text-yellow-800 border-yellow-300';
+                            return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
                           case 4:
-                            return 'bg-orange-100 text-orange-800 border-orange-300';
+                            return 'bg-orange-500/20 text-orange-400 border-orange-500/30';
                           case 5:
-                            return 'bg-red-100 text-red-800 border-red-300';
+                            return 'bg-red-500/20 text-red-400 border-red-500/30';
                           default:
-                            return 'bg-slate-100 text-slate-800 border-slate-300';
+                            return 'bg-slate-500/20 text-slate-400 border-slate-500/30';
                         }
                       };
 
