@@ -1,5 +1,6 @@
 import type { Player, Team, ElementType } from '@/types/fpl';
 import { formatPrice, isHigherBetter, findBestAndWorst } from '@/lib/utils';
+import { NewsIndicator } from '@/components/NewsIndicator';
 
 interface PlayerCompareProps {
   players: Array<{
@@ -146,7 +147,10 @@ export function PlayerCompare({ players }: PlayerCompareProps) {
                 <tr key={player.id} className="border-b border-dark-border">
                   <td className="px-4 py-2">
                     <div>
-                      <div className="font-medium text-white">{player.web_name}</div>
+                      <div className="flex items-center gap-2 font-medium text-white">
+                        {player.web_name}
+                        <NewsIndicator news={player.news} />
+                      </div>
                       <div className="text-xs text-slate-400">
                         {position.singular_name_short}
                       </div>

@@ -1,5 +1,6 @@
 import type { Player } from '@/types/fpl';
 import { formatPrice, getPositionName } from '@/lib/utils';
+import { NewsIndicator } from '@/components/NewsIndicator';
 
 interface TeamPlayerCardProps {
   player: Player;
@@ -48,6 +49,7 @@ export function TeamPlayerCard({
             <h3 className="font-semibold text-white group-hover:text-violet-300">
               {player.web_name}
             </h3>
+            <NewsIndicator news={player.news} />
             {isCaptain && (
               <span className="rounded bg-yellow-500/20 px-2 py-0.5 text-xs font-medium text-yellow-400 border border-yellow-500/30">
                 C

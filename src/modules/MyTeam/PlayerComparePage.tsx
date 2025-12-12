@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAppContext } from '@/context/AppContext';
 import { getBootstrapData, getPlayerSummary } from '@/services/api';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
+import { NewsIndicator } from '@/components/NewsIndicator';
 import type { Player, Team } from '@/types/fpl';
 import type { PlayerSummary } from '@/types/player';
 import {
@@ -373,7 +374,10 @@ function ComparisonTable({
                   className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-slate-400"
                 >
                   <div>
-                    <div className="font-semibold text-white">{player.web_name}</div>
+                    <div className="flex items-center justify-center gap-2 font-semibold text-white">
+                      {player.web_name}
+                      <NewsIndicator news={player.news} />
+                    </div>
                     <div className="text-xs font-normal text-slate-400">
                       {getTeamShortName(player.team)}
                     </div>

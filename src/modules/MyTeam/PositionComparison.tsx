@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import type { Player, Team, ElementType } from '@/types/fpl';
 import { formatPrice, getPositionName } from '@/lib/utils';
 import { cn } from '@/lib/utils';
+import { NewsIndicator } from '@/components/NewsIndicator';
 
 const getPositionColor = (positionId: number): string => {
   switch (positionId) {
@@ -124,8 +125,9 @@ export function PositionComparison({
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-medium text-slate-400">#{index + 1}</span>
                       <div>
-                        <div className="text-sm font-medium text-white">
+                        <div className="flex items-center gap-2 text-sm font-medium text-white">
                           {player.web_name}
+                          <NewsIndicator news={player.news} />
                           {isCurrentPlayer && (
                             <span className="ml-2 rounded bg-violet-500/20 px-2 py-0.5 text-xs font-medium text-violet-400 border border-violet-500/30">
                               You

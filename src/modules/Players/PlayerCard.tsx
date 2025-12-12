@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import type { Player, Team, ElementType } from '@/types/fpl';
 import { cn } from '@/lib/utils';
+import { NewsIndicator } from '@/components/NewsIndicator';
 
 interface PlayerCardProps {
   player: Player;
@@ -50,6 +51,7 @@ export function PlayerCard({ player, team, position }: PlayerCardProps) {
               <h3 className="text-xl font-bold text-white">
                 {player.web_name}
               </h3>
+              <NewsIndicator news={player.news} />
               <span
                 className={cn(
                   'rounded border px-2 py-1 text-xs font-medium',

@@ -4,6 +4,7 @@ import { useAppContext } from '@/context/AppContext';
 import { useFPLApi } from '@/hooks/useFPLApi';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { ComparisonFooter } from '@/components/ComparisonFooter';
+import { NewsIndicator } from '@/components/NewsIndicator';
 import type { Player, Team, ElementType } from '@/types/fpl';
 import { cn, formatPrice } from '@/lib/utils';
 
@@ -409,7 +410,10 @@ export function PlayersPage() {
                     >
                       <td className="whitespace-nowrap px-4 py-3">
                         <div>
-                          <div className="font-medium text-white">{player.web_name}</div>
+                          <div className="flex items-center gap-2 font-medium text-white">
+                            {player.web_name}
+                            <NewsIndicator news={player.news} />
+                          </div>
                           <div className="text-xs text-slate-400">{team.short_name}</div>
                         </div>
                       </td>

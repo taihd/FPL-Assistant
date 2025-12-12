@@ -5,6 +5,7 @@ import { useTeamContext } from '@/context/TeamContext';
 import { getBootstrapData, getPlayerSummary } from '@/services/api';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { ComparisonFooter } from '@/components/ComparisonFooter';
+import { NewsIndicator } from '@/components/NewsIndicator';
 import { PlayerHistoryChart } from './PlayerHistoryChart';
 import { PlayerFixtures } from './PlayerFixtures';
 import { PositionComparison } from './PositionComparison';
@@ -150,9 +151,12 @@ export function PlayerDetailPage() {
       <div className="mb-6 rounded-lg border border-dark-border bg-[#25252B] p-6">
         <div className="mb-4 flex items-start justify-between">
           <div>
-            <h1 className="mb-2 text-3xl font-bold text-white">
-              {player.web_name}
-            </h1>
+            <div className="mb-2 flex items-center gap-2">
+              <h1 className="text-3xl font-bold text-white">
+                {player.web_name}
+              </h1>
+              <NewsIndicator news={player.news} />
+            </div>
             <p className="text-slate-300">
               {player.first_name} {player.second_name}
             </p>

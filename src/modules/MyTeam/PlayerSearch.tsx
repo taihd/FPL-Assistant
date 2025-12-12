@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { getBootstrapData } from '@/services/api';
 import type { Player, Team } from '@/types/fpl';
 import { getPositionName } from '@/lib/utils';
+import { NewsIndicator } from '@/components/NewsIndicator';
 
 interface PlayerSearchProps {
   onAddToCompare: (playerId: number) => void;
@@ -95,7 +96,10 @@ export function PlayerSearch({
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="font-medium">{player.web_name}</div>
+                      <div className="flex items-center gap-2 font-medium">
+                        {player.web_name}
+                        <NewsIndicator news={player.news} />
+                      </div>
                         <div className="text-xs text-slate-500">
                           {getPositionName(player.element_type)} • {getTeamName(player.team)} • {player.total_points} pts • £{(player.now_cost/10).toFixed(1)}m
                         </div>
