@@ -10,17 +10,17 @@ interface PlayerFixturesProps {
 const getDifficultyColor = (difficulty: number): string => {
   switch (difficulty) {
     case 1:
-      return 'bg-lime-100 text-lime-800 border-lime-300';
+      return 'bg-lime-500/20 text-lime-400 border-lime-500/30';
     case 2:
-      return 'bg-green-100 text-green-800 border-green-300';
+      return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
     case 3:
-      return 'bg-yellow-100 text-yellow-800 border-yellow-300';
+      return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
     case 4:
-      return 'bg-orange-100 text-orange-800 border-orange-300';
+      return 'bg-orange-500/20 text-orange-400 border-orange-500/30';
     case 5:
-      return 'bg-red-100 text-red-800 border-red-300';
+      return 'bg-red-500/20 text-red-400 border-red-500/30';
     default:
-      return 'bg-slate-100 text-slate-800 border-slate-300';
+      return 'bg-slate-500/20 text-slate-400 border-slate-500/30';
   }
 };
 
@@ -56,7 +56,7 @@ export function PlayerFixtures({ fixtures }: PlayerFixturesProps) {
 
   if (upcomingFixtures.length === 0) {
     return (
-      <div className="py-4 text-center text-slate-500">
+      <div className="py-4 text-center text-slate-400">
         No upcoming fixtures available.
       </div>
     );
@@ -72,30 +72,30 @@ export function PlayerFixtures({ fixtures }: PlayerFixturesProps) {
       {upcomingFixtures.map((fixture) => (
         <div
           key={fixture.id}
-          className="flex items-center justify-between rounded-lg border border-slate-200 bg-white p-4"
+          className="flex items-center justify-between rounded-lg border border-dark-border bg-[#2A2A35] p-4"
         >
           <div className="flex-1">
             <div className="mb-1 flex items-center gap-2">
-              <span className="text-sm font-medium text-slate-500">
+              <span className="text-sm font-medium text-slate-400">
                 GW {fixture.event}
               </span>
               {fixture.is_home ? (
-                <span className="rounded bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
+                <span className="rounded bg-blue-500/20 px-2 py-0.5 text-xs font-medium text-blue-400 border border-blue-500/30">
                   H
                 </span>
               ) : (
-                <span className="rounded bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
+                <span className="rounded bg-slate-500/20 px-2 py-0.5 text-xs font-medium text-slate-400 border border-slate-500/30">
                   A
                 </span>
               )}
             </div>
-            <div className="text-sm font-semibold text-slate-900">
+            <div className="text-sm font-semibold text-white">
               {fixture.is_home
                 ? `${getTeamName(fixture.team_h)} vs ${getTeamName(fixture.team_a)}`
                 : `${getTeamName(fixture.team_a)} vs ${getTeamName(fixture.team_h)}`}
             </div>
             {fixture.kickoff_time && (
-              <div className="mt-1 text-xs text-slate-500">
+              <div className="mt-1 text-xs text-slate-400">
                 {new Date(fixture.kickoff_time).toLocaleDateString('en-GB', {
                   weekday: 'short',
                   day: 'numeric',
