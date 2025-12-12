@@ -43,7 +43,14 @@ export function getPositionFullName(elementType: number): string {
  * Returns true if higher is better, false if lower is better
  */
 export function isHigherBetter(statName: string): boolean {
-  const lowerIsBetterStats = ['price', 'cost'];
+  const lowerIsBetterStats = [
+    'price',
+    'cost',
+    'goalsconceded',
+    'goals_conceded',
+    'expected_goals_conceded',
+    'xdc',
+  ];
   const statLower = statName.toLowerCase();
   return !lowerIsBetterStats.some((stat) => statLower.includes(stat));
 }
