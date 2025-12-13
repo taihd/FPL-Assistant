@@ -30,26 +30,30 @@ export function ManagerHistoryChart({ history }: ManagerHistoryChartProps) {
 
   const renderPointsChart = () => (
     <ResponsiveContainer width="100%" height={300}>
-      <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+      <LineChart data={chartData} margin={{ top: 5, right: 20, left: 50, bottom: 5 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
         <XAxis
           dataKey="gameweek"
-          stroke="#64748b"
-          label={{ value: 'Gameweek', position: 'insideBottom', offset: -5 }}
+          stroke="#9ca3af"
+          tick={{ fill: '#9ca3af' }}
+          label={{ value: 'Gameweek', position: 'insideBottom', offset: -5, fill: '#9ca3af' }}
         />
         <YAxis
           yAxisId="left"
-          stroke="#64748b"
-          label={{ value: 'Points', angle: -90, position: 'insideLeft' }}
+          stroke="#9ca3af"
+          tick={{ fill: '#9ca3af' }}
+          label={{ value: 'Points', angle: -90, position: 'left', fill: '#9ca3af' }}
         />
         <Tooltip
           contentStyle={{
-            backgroundColor: '#fff',
-            border: '1px solid #e2e8f0',
+            backgroundColor: '#1f2937',
+            border: '1px solid #374151',
             borderRadius: '6px',
+            color: '#fff',
           }}
+          labelStyle={{ color: '#fff' }}
         />
-        <Legend />
+        <Legend wrapperStyle={{ color: '#9ca3af' }} />
         <Line
           yAxisId="left"
           type="monotone"
@@ -72,37 +76,52 @@ export function ManagerHistoryChart({ history }: ManagerHistoryChartProps) {
     </ResponsiveContainer>
   );
 
+  const formatRankValue = (value: number): string => {
+    if (value >= 1000000) {
+      return `${(value / 1000000).toFixed(1)}M`;
+    }
+    if (value >= 1000) {
+      return `${(value / 1000).toFixed(0)}K`;
+    }
+    return value.toString();
+  };
+
   const renderRankChart = () => (
     <ResponsiveContainer width="100%" height={300}>
-      <ComposedChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+      <ComposedChart data={chartData} margin={{ top: 5, right: 20, left: 60, bottom: 5 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
         <XAxis
           dataKey="gameweek"
-          stroke="#64748b"
-          label={{ value: 'Gameweek', position: 'insideBottom', offset: -5 }}
+          stroke="#9ca3af"
+          tick={{ fill: '#9ca3af' }}
+          label={{ value: 'Gameweek', position: 'insideBottom', offset: -5, fill: '#9ca3af' }}
         />
         <YAxis
           yAxisId="left"
-          stroke="#64748b"
+          stroke="#9ca3af"
+          tick={{ fill: '#9ca3af' }}
           reversed
-          label={{ value: 'Rank (lower is better)', angle: -90, position: 'insideLeft' }}
+          tickFormatter={formatRankValue}
+          label={{ value: 'Rank', angle: -90, position: 'left', fill: '#9ca3af' }}
         />
         <Tooltip
           contentStyle={{
-            backgroundColor: '#fff',
-            border: '1px solid #e2e8f0',
+            backgroundColor: '#1f2937',
+            border: '1px solid #374151',
             borderRadius: '6px',
+            color: '#fff',
           }}
+          labelStyle={{ color: '#fff' }}
           formatter={(value: number) => `#${value.toLocaleString()}`}
         />
-        <Legend />
+        <Legend wrapperStyle={{ color: '#9ca3af' }} />
         <Area
           yAxisId="left"
           type="monotone"
           dataKey="rank"
           stroke="#ef4444"
-          fill="#fecaca"
-          fillOpacity={0.6}
+          fill="#ef4444"
+          fillOpacity={0.2}
           name="Overall Rank"
         />
         <Line
@@ -112,34 +131,57 @@ export function ManagerHistoryChart({ history }: ManagerHistoryChartProps) {
           stroke="#ef4444"
           strokeWidth={2}
           dot={{ r: 4 }}
+          hide
         />
       </ComposedChart>
     </ResponsiveContainer>
   );
 
-  const renderValueChart = () => (
-    <ResponsiveContainer width="100%" height={300}>
-      <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-        <XAxis
-          dataKey="gameweek"
-          stroke="#64748b"
-          label={{ value: 'Gameweek', position: 'insideBottom', offset: -5 }}
-        />
-        <YAxis
-          yAxisId="left"
-          stroke="#64748b"
-          label={{ value: 'Team Value (£m)', angle: -90, position: 'insideLeft' }}
-        />
+  const renderValueChart = () => {
+    // Calculate min and max values to create a focused domain
+    const values = chartData.map((d) => d.value);
+    const minValue = Math.min(...values);
+    const maxValue = Math.max(...values);
+    const range = maxValue - minValue;
+    // Add 5% padding above and below
+    const padding = range * 0.05;
+    const domainMin = Math.max(0, minValue - padding);
+    const domainMax = maxValue + padding;
+
+    // Format y-axis values - round to 1 decimal place
+    const formatValue = (value: number): string => {
+      return value.toFixed(1);
+    };
+
+    return (
+      <ResponsiveContainer width="100%" height={300}>
+        <LineChart data={chartData} margin={{ top: 5, right: 20, left: 60, bottom: 5 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+          <XAxis
+            dataKey="gameweek"
+            stroke="#9ca3af"
+            tick={{ fill: '#9ca3af' }}
+            label={{ value: 'Gameweek', position: 'insideBottom', offset: -5, fill: '#9ca3af' }}
+          />
+          <YAxis
+            yAxisId="left"
+            stroke="#9ca3af"
+            tick={{ fill: '#9ca3af' }}
+            domain={[domainMin, domainMax]}
+            tickFormatter={formatValue}
+            label={{ value: 'Team Value (£m)', angle: -90, position: 'left', fill: '#9ca3af' }}
+          />
         <Tooltip
           contentStyle={{
-            backgroundColor: '#fff',
-            border: '1px solid #e2e8f0',
+            backgroundColor: '#1f2937',
+            border: '1px solid #374151',
             borderRadius: '6px',
+            color: '#fff',
           }}
+          labelStyle={{ color: '#fff' }}
           formatter={(value: number) => `£${value.toFixed(1)}m`}
         />
-        <Legend />
+        <Legend wrapperStyle={{ color: '#9ca3af' }} />
         <Line
           yAxisId="left"
           type="monotone"
@@ -151,19 +193,20 @@ export function ManagerHistoryChart({ history }: ManagerHistoryChartProps) {
         />
       </LineChart>
     </ResponsiveContainer>
-  );
+    );
+  };
 
   return (
-    <div className="rounded-lg border bg-white p-4 shadow-sm sm:p-6">
+    <div className="rounded-lg border border-dark-border bg-[#25252B] p-4 sm:p-6">
       <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <h3 className="text-lg font-semibold text-slate-900">Manager History</h3>
+        <h3 className="text-lg font-semibold text-white">Manager History</h3>
         <div className="flex gap-2">
           <button
             onClick={() => setActiveTab('points')}
             className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
               activeTab === 'points'
-                ? 'bg-slate-900 text-white'
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                ? 'bg-violet-500 text-white'
+                : 'bg-[#2A2A35] text-slate-300 hover:bg-[#2A2A35]/80'
             }`}
           >
             Points
@@ -172,8 +215,8 @@ export function ManagerHistoryChart({ history }: ManagerHistoryChartProps) {
             onClick={() => setActiveTab('rank')}
             className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
               activeTab === 'rank'
-                ? 'bg-slate-900 text-white'
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                ? 'bg-violet-500 text-white'
+                : 'bg-[#2A2A35] text-slate-300 hover:bg-[#2A2A35]/80'
             }`}
           >
             Rank
@@ -182,8 +225,8 @@ export function ManagerHistoryChart({ history }: ManagerHistoryChartProps) {
             onClick={() => setActiveTab('value')}
             className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
               activeTab === 'value'
-                ? 'bg-slate-900 text-white'
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                ? 'bg-violet-500 text-white'
+                : 'bg-[#2A2A35] text-slate-300 hover:bg-[#2A2A35]/80'
             }`}
           >
             Value
