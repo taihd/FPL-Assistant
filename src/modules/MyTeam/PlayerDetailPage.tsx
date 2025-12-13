@@ -170,76 +170,46 @@ export function PlayerDetailPage() {
         )}
       </div>
 
-      {/* Player Stats - Compact Table */}
-      <div className="mb-6 rounded-lg border border-dark-border bg-[#25252B] overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-dark-border">
-            <thead className="bg-[#2A2A35]">
-              <tr>
-                <th className="px-3 py-1.5 text-left text-[10px] font-medium uppercase tracking-wider text-slate-400">
-                  Category
-                </th>
-                <th className="px-3 py-1.5 text-left text-[10px] font-medium uppercase tracking-wider text-slate-400">
-                  Stat
-                </th>
-                <th className="px-3 py-1.5 text-right text-[10px] font-medium uppercase tracking-wider text-slate-400">
-                  Value
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-dark-border bg-[#25252B]">
-              {/* General Stats */}
-              <tr className="bg-[#2A2A35]/20">
-                <td className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-300" colSpan={3}>
-                  General Stats
-                </td>
-              </tr>
-              <tr>
-                <td className="px-3 py-1 text-xs text-slate-400"></td>
-                <td className="px-3 py-1 text-xs text-slate-400">Price</td>
-                <td className="px-3 py-1 text-right text-xs font-semibold text-white">
-                  {formatPrice(player.now_cost)}
-                </td>
-              </tr>
-              <tr>
-                <td className="px-3 py-1 text-xs text-slate-400"></td>
-                <td className="px-3 py-1 text-xs text-slate-400">Total Points</td>
-                <td className="px-3 py-1 text-right text-xs font-semibold text-white">
-                  {player.total_points}
-                </td>
-              </tr>
-              <tr>
-                <td className="px-3 py-1 text-xs text-slate-400"></td>
-                <td className="px-3 py-1 text-xs text-slate-400">Form</td>
-                <td className="px-3 py-1 text-right text-xs font-semibold text-white">
-                  {player.form || 'N/A'}
-                </td>
-              </tr>
-              <tr>
-                <td className="px-3 py-1 text-xs text-slate-400"></td>
-                <td className="px-3 py-1 text-xs text-slate-400">ICT Index</td>
-                <td className="px-3 py-1 text-right text-xs font-semibold text-white">
+      {/* Player Stats - 4 Column Layout */}
+      <div className="mb-6 rounded-lg border border-dark-border bg-[#25252B] p-4">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4 lg:gap-8">
+          {/* General Stats Column */}
+          <div className="flex flex-col pr-4 md:border-r md:border-dark-border md:pr-6 lg:pr-8">
+            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-300">
+              General Stats
+            </h3>
+            <div className="space-y-2">
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-400">Price</span>
+                <span className="font-semibold text-white">{formatPrice(player.now_cost)}</span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-400">Total Points</span>
+                <span className="font-semibold text-white">{player.total_points}</span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-400">Form</span>
+                <span className="font-semibold text-white">{player.form || 'N/A'}</span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-400">ICT Index</span>
+                <span className="font-semibold text-white">
                   {parseFloat(player.ict_index).toFixed(1)}
-                </td>
-              </tr>
-              <tr>
-                <td className="px-3 py-1 text-xs text-slate-400"></td>
-                <td className="px-3 py-1 text-xs text-slate-400">Selected By</td>
-                <td className="px-3 py-1 text-right text-xs font-semibold text-white">
+                </span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-400">Selected By</span>
+                <span className="font-semibold text-white">
                   {parseFloat(player.selected_by_percent).toFixed(1)}%
-                </td>
-              </tr>
-              <tr>
-                <td className="px-3 py-1 text-xs text-slate-400"></td>
-                <td className="px-3 py-1 text-xs text-slate-400">Total Minutes</td>
-                <td className="px-3 py-1 text-right text-xs font-semibold text-white">
-                  {player.minutes.toLocaleString()}
-                </td>
-              </tr>
-              <tr>
-                <td className="px-3 py-1 text-xs text-slate-400"></td>
-                <td className="px-3 py-1 text-xs text-slate-400">Avg Minutes (by Starts)</td>
-                <td className="px-3 py-1 text-right text-xs font-semibold text-white">
+                </span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-400">Total Minutes</span>
+                <span className="font-semibold text-white">{player.minutes.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-400">Avg Minutes (by Starts)</span>
+                <span className="font-semibold text-white">
                   {playerSummary && playerSummary.history.length > 0
                     ? (() => {
                         const starts = playerSummary.history.reduce(
@@ -249,67 +219,59 @@ export function PlayerDetailPage() {
                         return starts > 0 ? (player.minutes / starts).toFixed(1) : '0.0';
                       })()
                     : '0.0'}
-                </td>
-              </tr>
-              <tr>
-                <td className="px-3 py-1 text-xs text-slate-400"></td>
-                <td className="px-3 py-1 text-xs text-slate-400">Starts</td>
-                <td className="px-3 py-1 text-right text-xs font-semibold text-white">
+                </span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-400">Starts</span>
+                <span className="font-semibold text-white">
                   {playerSummary && playerSummary.history.length > 0
                     ? playerSummary.history.reduce(
                         (sum, h) => sum + (h.starts || (h.minutes >= 60 ? 1 : 0)),
                         0
                       )
                     : 0}
-                </td>
-              </tr>
+                </span>
+              </div>
+            </div>
+          </div>
 
-              {/* Offensive Stats */}
-              <tr className="bg-[#2A2A35]/20">
-                <td className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-300" colSpan={3}>
-                  Offensive Stats
-                </td>
-              </tr>
-              <tr>
-                <td className="px-3 py-1 text-xs text-slate-400"></td>
-                <td className="px-3 py-1 text-xs text-slate-400">Goals</td>
-                <td className="px-3 py-1 text-right text-xs font-semibold text-white">
-                  {player.goals_scored}
-                </td>
-              </tr>
-              <tr>
-                <td className="px-3 py-1 text-xs text-slate-400"></td>
-                <td className="px-3 py-1 text-xs text-slate-400">Assists</td>
-                <td className="px-3 py-1 text-right text-xs font-semibold text-white">
-                  {player.assists}
-                </td>
-              </tr>
-              <tr>
-                <td className="px-3 py-1 text-xs text-slate-400"></td>
-                <td className="px-3 py-1 text-xs text-slate-400">xG</td>
-                <td className="px-3 py-1 text-right text-xs font-semibold text-white">
+          {/* Offensive Stats Column */}
+          <div className="flex flex-col pr-4 md:border-r md:border-dark-border md:pr-6 lg:pr-8">
+            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-300">
+              Offensive Stats
+            </h3>
+            <div className="space-y-2">
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-400">Goals</span>
+                <span className="font-semibold text-white">{player.goals_scored}</span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-400">Assists</span>
+                <span className="font-semibold text-white">{player.assists}</span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-400">xG</span>
+                <span className="font-semibold text-white">
                   {playerSummary && playerSummary.history.length > 0
                     ? playerSummary.history
                         .reduce((sum, h) => sum + parseFloat(h.expected_goals || '0'), 0)
                         .toFixed(2)
                     : '0.00'}
-                </td>
-              </tr>
-              <tr>
-                <td className="px-3 py-1 text-xs text-slate-400"></td>
-                <td className="px-3 py-1 text-xs text-slate-400">xA</td>
-                <td className="px-3 py-1 text-right text-xs font-semibold text-white">
+                </span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-400">xA</span>
+                <span className="font-semibold text-white">
                   {playerSummary && playerSummary.history.length > 0
                     ? playerSummary.history
                         .reduce((sum, h) => sum + parseFloat(h.expected_assists || '0'), 0)
                         .toFixed(2)
                     : '0.00'}
-                </td>
-              </tr>
-              <tr>
-                <td className="px-3 py-1 text-xs text-slate-400"></td>
-                <td className="px-3 py-1 text-xs text-slate-400">xGI</td>
-                <td className="px-3 py-1 text-right text-xs font-semibold text-white">
+                </span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-400">xGI</span>
+                <span className="font-semibold text-white">
                   {playerSummary && playerSummary.history.length > 0
                     ? playerSummary.history
                         .reduce(
@@ -318,54 +280,46 @@ export function PlayerDetailPage() {
                         )
                         .toFixed(2)
                     : '0.00'}
-                </td>
-              </tr>
-              <tr>
-                <td className="px-3 py-1 text-xs text-slate-400"></td>
-                <td className="px-3 py-1 text-xs text-slate-400">Threat</td>
-                <td className="px-3 py-1 text-right text-xs font-semibold text-white">
+                </span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-400">Threat</span>
+                <span className="font-semibold text-white">
                   {parseFloat(player.threat).toFixed(1)}
-                </td>
-              </tr>
-              <tr>
-                <td className="px-3 py-1 text-xs text-slate-400"></td>
-                <td className="px-3 py-1 text-xs text-slate-400">Creativity</td>
-                <td className="px-3 py-1 text-right text-xs font-semibold text-white">
+                </span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-400">Creativity</span>
+                <span className="font-semibold text-white">
                   {parseFloat(player.creativity).toFixed(1)}
-                </td>
-              </tr>
-              <tr>
-                <td className="px-3 py-1 text-xs text-slate-400"></td>
-                <td className="px-3 py-1 text-xs text-slate-400">Influence</td>
-                <td className="px-3 py-1 text-right text-xs font-semibold text-white">
+                </span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-400">Influence</span>
+                <span className="font-semibold text-white">
                   {parseFloat(player.influence).toFixed(1)}
-                </td>
-              </tr>
+                </span>
+              </div>
+            </div>
+          </div>
 
-              {/* Defensive Stats */}
-              <tr className="bg-[#2A2A35]/20">
-                <td className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-300" colSpan={3}>
-                  Defensive Stats
-                </td>
-              </tr>
-              <tr>
-                <td className="px-3 py-1 text-xs text-slate-400"></td>
-                <td className="px-3 py-1 text-xs text-slate-400">Clean Sheets</td>
-                <td className="px-3 py-1 text-right text-xs font-semibold text-white">
-                  {player.clean_sheets}
-                </td>
-              </tr>
-              <tr>
-                <td className="px-3 py-1 text-xs text-slate-400"></td>
-                <td className="px-3 py-1 text-xs text-slate-400">Goals Conceded</td>
-                <td className="px-3 py-1 text-right text-xs font-semibold text-white">
-                  {player.goals_conceded}
-                </td>
-              </tr>
-              <tr>
-                <td className="px-3 py-1 text-xs text-slate-400"></td>
-                <td className="px-3 py-1 text-xs text-slate-400">xDC</td>
-                <td className="px-3 py-1 text-right text-xs font-semibold text-white">
+          {/* Defensive Stats Column */}
+          <div className="flex flex-col pr-4 md:border-r md:border-dark-border md:pr-6 lg:pr-8">
+            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-300">
+              Defensive Stats
+            </h3>
+            <div className="space-y-2">
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-400">Clean Sheets</span>
+                <span className="font-semibold text-white">{player.clean_sheets}</span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-400">Goals Conceded</span>
+                <span className="font-semibold text-white">{player.goals_conceded}</span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-400">xDC</span>
+                <span className="font-semibold text-white">
                   {playerSummary && playerSummary.history.length > 0
                     ? playerSummary.history
                         .reduce(
@@ -374,12 +328,11 @@ export function PlayerDetailPage() {
                         )
                         .toFixed(2)
                     : '0.00'}
-                </td>
-              </tr>
-              <tr>
-                <td className="px-3 py-1 text-xs text-slate-400"></td>
-                <td className="px-3 py-1 text-xs text-slate-400">DefCon (Total)</td>
-                <td className="px-3 py-1 text-right text-xs font-semibold text-white">
+                </span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-400">DefCon (Total)</span>
+                <span className="font-semibold text-white">
                   {playerSummary && playerSummary.history.length > 0
                     ? (() => {
                         const hasDefConField = playerSummary.history.some(
@@ -394,12 +347,11 @@ export function PlayerDetailPage() {
                         return playerSummary.history.reduce((sum, h) => sum + h.clean_sheets, 0);
                       })()
                     : player.clean_sheets}
-                </td>
-              </tr>
-              <tr>
-                <td className="px-3 py-1 text-xs text-slate-400"></td>
-                <td className="px-3 py-1 text-xs text-slate-400">DefCon (Average)</td>
-                <td className="px-3 py-1 text-right text-xs font-semibold text-white">
+                </span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-400">DefCon (Average)</span>
+                <span className="font-semibold text-white">
                   {playerSummary && playerSummary.history.length > 0
                     ? (() => {
                         const gamesPlayed = playerSummary.history.filter((h) => h.minutes > 0)
@@ -422,31 +374,27 @@ export function PlayerDetailPage() {
                         return gamesPlayed > 0 ? (totalDefCon / gamesPlayed).toFixed(2) : '0.00';
                       })()
                     : '0.00'}
-                </td>
-              </tr>
+                </span>
+              </div>
+            </div>
+          </div>
 
-              {/* Bonus Stats */}
-              <tr className="bg-[#2A2A35]/20">
-                <td className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-300" colSpan={3}>
-                  Bonus Stats
-                </td>
-              </tr>
-              <tr>
-                <td className="px-3 py-1 text-xs text-slate-400"></td>
-                <td className="px-3 py-1 text-xs text-slate-400">Bonus Points</td>
-                <td className="px-3 py-1 text-right text-xs font-semibold text-white">
-                  {player.bonus}
-                </td>
-              </tr>
-              <tr>
-                <td className="px-3 py-1 text-xs text-slate-400"></td>
-                <td className="px-3 py-1 text-xs text-slate-400">BPS</td>
-                <td className="px-3 py-1 text-right text-xs font-semibold text-white">
-                  {player.bps}
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          {/* Bonus Stats Column */}
+          <div className="flex flex-col">
+            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-300">
+              Bonus Stats
+            </h3>
+            <div className="space-y-2">
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-400">Bonus Points</span>
+                <span className="font-semibold text-white">{player.bonus}</span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-400">BPS</span>
+                <span className="font-semibold text-white">{player.bps}</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
