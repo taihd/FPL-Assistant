@@ -147,247 +147,306 @@ export function PlayerDetailPage() {
         ← Back to My Team
       </button>
 
-      {/* Player Info Card */}
-      <div className="mb-6 rounded-lg border border-dark-border bg-[#25252B] p-6">
-        <div className="mb-4 flex items-start justify-between">
-          <div>
-            <div className="mb-2 flex items-center gap-2">
-              <h1 className="text-3xl font-bold text-white">
-                {player.web_name}
-              </h1>
-              <NewsIndicator news={player.news} />
-            </div>
-            <p className="text-slate-300">
-              {player.first_name} {player.second_name}
-            </p>
-            <p className="mt-1 text-sm text-slate-400">
-              {getPositionFullName(player.element_type)} • {getTeamName(player.team)}
-            </p>
+      {/* Player Header */}
+      <div className="mb-6 flex items-start justify-between">
+        <div>
+          <div className="mb-2 flex items-center gap-2">
+            <h1 className="text-3xl font-bold text-white">
+              {player.web_name}
+            </h1>
+            <NewsIndicator news={player.news} />
           </div>
-          {teamPlayers?.some((p) => p.id === player.id) && (
-            <span className="rounded-full bg-green-500/20 px-3 py-1 text-sm font-medium text-green-400 border border-green-500/30">
-              In My Team
-            </span>
-          )}
+          <p className="text-slate-300">
+            {player.first_name} {player.second_name}
+          </p>
+          <p className="mt-1 text-sm text-slate-400">
+            {getPositionFullName(player.element_type)} • {getTeamName(player.team)}
+          </p>
         </div>
+        {teamPlayers?.some((p) => p.id === player.id) && (
+          <span className="rounded-full bg-green-500/20 px-3 py-1 text-sm font-medium text-green-400 border border-green-500/30">
+            In My Team
+          </span>
+        )}
+      </div>
 
-        {/* General Stats */}
-        <div className="mt-4 border-t border-dark-border pt-4">
-          <h3 className="mb-3 text-sm font-semibold text-slate-300">General Stats</h3>
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-            <div>
-              <div className="text-sm text-slate-400">Price</div>
-              <div className="text-2xl font-bold text-white">
-                {formatPrice(player.now_cost)}
-              </div>
-            </div>
-            <div>
-              <div className="text-sm text-slate-400">Total Points</div>
-              <div className="text-2xl font-bold text-white">{player.total_points}</div>
-            </div>
-            <div>
-              <div className="text-sm text-slate-400">Form</div>
-              <div className="text-2xl font-bold text-white">{player.form || 'N/A'}</div>
-            </div>
-            <div>
-              <div className="text-sm text-slate-400">ICT Index</div>
-              <div className="text-2xl font-bold text-white">
-                {parseFloat(player.ict_index).toFixed(1)}
-              </div>
-            </div>
-            <div>
-              <div className="text-sm text-slate-400">Selected By</div>
-              <div className="font-semibold text-white">
-                {parseFloat(player.selected_by_percent).toFixed(1)}%
-              </div>
-            </div>
-            <div>
-              <div className="text-sm text-slate-400">Total Minutes</div>
-              <div className="font-semibold text-white">
-                {player.minutes.toLocaleString()}
-              </div>
-            </div>
-            <div>
-              <div className="text-sm text-slate-400">Avg Minutes (by Starts)</div>
-              <div className="font-semibold text-white">
-                {playerSummary && playerSummary.history.length > 0
-                  ? (() => {
-                      const starts = playerSummary.history.reduce(
+      {/* Player Stats - Compact Table */}
+      <div className="mb-6 rounded-lg border border-dark-border bg-[#25252B] overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-dark-border">
+            <thead className="bg-[#2A2A35]">
+              <tr>
+                <th className="px-3 py-1.5 text-left text-[10px] font-medium uppercase tracking-wider text-slate-400">
+                  Category
+                </th>
+                <th className="px-3 py-1.5 text-left text-[10px] font-medium uppercase tracking-wider text-slate-400">
+                  Stat
+                </th>
+                <th className="px-3 py-1.5 text-right text-[10px] font-medium uppercase tracking-wider text-slate-400">
+                  Value
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-dark-border bg-[#25252B]">
+              {/* General Stats */}
+              <tr className="bg-[#2A2A35]/20">
+                <td className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-300" colSpan={3}>
+                  General Stats
+                </td>
+              </tr>
+              <tr>
+                <td className="px-3 py-1 text-xs text-slate-400"></td>
+                <td className="px-3 py-1 text-xs text-slate-400">Price</td>
+                <td className="px-3 py-1 text-right text-xs font-semibold text-white">
+                  {formatPrice(player.now_cost)}
+                </td>
+              </tr>
+              <tr>
+                <td className="px-3 py-1 text-xs text-slate-400"></td>
+                <td className="px-3 py-1 text-xs text-slate-400">Total Points</td>
+                <td className="px-3 py-1 text-right text-xs font-semibold text-white">
+                  {player.total_points}
+                </td>
+              </tr>
+              <tr>
+                <td className="px-3 py-1 text-xs text-slate-400"></td>
+                <td className="px-3 py-1 text-xs text-slate-400">Form</td>
+                <td className="px-3 py-1 text-right text-xs font-semibold text-white">
+                  {player.form || 'N/A'}
+                </td>
+              </tr>
+              <tr>
+                <td className="px-3 py-1 text-xs text-slate-400"></td>
+                <td className="px-3 py-1 text-xs text-slate-400">ICT Index</td>
+                <td className="px-3 py-1 text-right text-xs font-semibold text-white">
+                  {parseFloat(player.ict_index).toFixed(1)}
+                </td>
+              </tr>
+              <tr>
+                <td className="px-3 py-1 text-xs text-slate-400"></td>
+                <td className="px-3 py-1 text-xs text-slate-400">Selected By</td>
+                <td className="px-3 py-1 text-right text-xs font-semibold text-white">
+                  {parseFloat(player.selected_by_percent).toFixed(1)}%
+                </td>
+              </tr>
+              <tr>
+                <td className="px-3 py-1 text-xs text-slate-400"></td>
+                <td className="px-3 py-1 text-xs text-slate-400">Total Minutes</td>
+                <td className="px-3 py-1 text-right text-xs font-semibold text-white">
+                  {player.minutes.toLocaleString()}
+                </td>
+              </tr>
+              <tr>
+                <td className="px-3 py-1 text-xs text-slate-400"></td>
+                <td className="px-3 py-1 text-xs text-slate-400">Avg Minutes (by Starts)</td>
+                <td className="px-3 py-1 text-right text-xs font-semibold text-white">
+                  {playerSummary && playerSummary.history.length > 0
+                    ? (() => {
+                        const starts = playerSummary.history.reduce(
+                          (sum, h) => sum + (h.starts || (h.minutes >= 60 ? 1 : 0)),
+                          0
+                        );
+                        return starts > 0 ? (player.minutes / starts).toFixed(1) : '0.0';
+                      })()
+                    : '0.0'}
+                </td>
+              </tr>
+              <tr>
+                <td className="px-3 py-1 text-xs text-slate-400"></td>
+                <td className="px-3 py-1 text-xs text-slate-400">Starts</td>
+                <td className="px-3 py-1 text-right text-xs font-semibold text-white">
+                  {playerSummary && playerSummary.history.length > 0
+                    ? playerSummary.history.reduce(
                         (sum, h) => sum + (h.starts || (h.minutes >= 60 ? 1 : 0)),
                         0
-                      );
-                      return starts > 0 ? (player.minutes / starts).toFixed(1) : '0.0';
-                    })()
-                  : '0.0'}
-              </div>
-            </div>
-            <div>
-              <div className="text-sm text-slate-400">Starts</div>
-              <div className="font-semibold text-white">
-                {playerSummary && playerSummary.history.length > 0
-                  ? playerSummary.history.reduce(
-                      (sum, h) => sum + (h.starts || (h.minutes >= 60 ? 1 : 0)),
-                      0
-                    )
-                  : 0}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Offensive Stats */}
-        <div className="mt-4 border-t border-dark-border pt-4">
-          <h3 className="mb-3 text-sm font-semibold text-slate-300">Offensive Stats</h3>
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-            <div>
-              <div className="text-sm text-slate-400">Goals</div>
-              <div className="font-semibold text-white">{player.goals_scored}</div>
-            </div>
-            <div>
-              <div className="text-sm text-slate-400">Assists</div>
-              <div className="font-semibold text-white">{player.assists}</div>
-            </div>
-            <div>
-              <div className="text-sm text-slate-400">xG</div>
-              <div className="font-semibold text-white">
-                {playerSummary && playerSummary.history.length > 0
-                  ? playerSummary.history
-                      .reduce((sum, h) => sum + parseFloat(h.expected_goals || '0'), 0)
-                      .toFixed(2)
-                  : '0.00'}
-              </div>
-            </div>
-            <div>
-              <div className="text-sm text-slate-400">xA</div>
-              <div className="font-semibold text-white">
-                {playerSummary && playerSummary.history.length > 0
-                  ? playerSummary.history
-                      .reduce((sum, h) => sum + parseFloat(h.expected_assists || '0'), 0)
-                      .toFixed(2)
-                  : '0.00'}
-              </div>
-            </div>
-            <div>
-              <div className="text-sm text-slate-400">xGI</div>
-              <div className="font-semibold text-white">
-                {playerSummary && playerSummary.history.length > 0
-                  ? playerSummary.history
-                      .reduce(
-                        (sum, h) => sum + parseFloat(h.expected_goal_involvements || '0'),
-                        0
                       )
-                      .toFixed(2)
-                  : '0.00'}
-              </div>
-            </div>
-            <div>
-              <div className="text-sm text-slate-400">Threat</div>
-              <div className="font-semibold text-white">
-                {parseFloat(player.threat).toFixed(1)}
-              </div>
-            </div>
-            <div>
-              <div className="text-sm text-slate-400">Creativity</div>
-              <div className="font-semibold text-white">
-                {parseFloat(player.creativity).toFixed(1)}
-              </div>
-            </div>
-            <div>
-              <div className="text-sm text-slate-400">Influence</div>
-              <div className="font-semibold text-white">
-                {parseFloat(player.influence).toFixed(1)}
-              </div>
-            </div>
-          </div>
-        </div>
+                    : 0}
+                </td>
+              </tr>
 
-        {/* Defensive Stats */}
-        <div className="mt-4 border-t border-dark-border pt-4">
-          <h3 className="mb-3 text-sm font-semibold text-slate-300">Defensive Stats</h3>
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-            <div>
-              <div className="text-sm text-slate-400">Clean Sheets</div>
-              <div className="font-semibold text-white">{player.clean_sheets}</div>
-            </div>
-            <div>
-              <div className="text-sm text-slate-400">Goals Conceded</div>
-              <div className="font-semibold text-white">{player.goals_conceded}</div>
-            </div>
-            <div>
-              <div className="text-sm text-slate-400">xDC</div>
-              <div className="font-semibold text-white">
-                {playerSummary && playerSummary.history.length > 0
-                  ? playerSummary.history
-                      .reduce(
-                        (sum, h) => sum + parseFloat(h.expected_goals_conceded || '0'),
-                        0
-                      )
-                      .toFixed(2)
-                  : '0.00'}
-              </div>
-            </div>
-            <div>
-              <div className="text-sm text-slate-400">DefCon (Total)</div>
-              <div className="font-semibold text-white">
-                {playerSummary && playerSummary.history.length > 0
-                  ? (() => {
-                      const hasDefConField = playerSummary.history.some(
-                        (h) => h.defensive_contribution !== undefined
-                      );
-                      if (hasDefConField) {
-                        return playerSummary.history.reduce(
-                          (sum, h) => sum + (h.defensive_contribution || 0),
+              {/* Offensive Stats */}
+              <tr className="bg-[#2A2A35]/20">
+                <td className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-300" colSpan={3}>
+                  Offensive Stats
+                </td>
+              </tr>
+              <tr>
+                <td className="px-3 py-1 text-xs text-slate-400"></td>
+                <td className="px-3 py-1 text-xs text-slate-400">Goals</td>
+                <td className="px-3 py-1 text-right text-xs font-semibold text-white">
+                  {player.goals_scored}
+                </td>
+              </tr>
+              <tr>
+                <td className="px-3 py-1 text-xs text-slate-400"></td>
+                <td className="px-3 py-1 text-xs text-slate-400">Assists</td>
+                <td className="px-3 py-1 text-right text-xs font-semibold text-white">
+                  {player.assists}
+                </td>
+              </tr>
+              <tr>
+                <td className="px-3 py-1 text-xs text-slate-400"></td>
+                <td className="px-3 py-1 text-xs text-slate-400">xG</td>
+                <td className="px-3 py-1 text-right text-xs font-semibold text-white">
+                  {playerSummary && playerSummary.history.length > 0
+                    ? playerSummary.history
+                        .reduce((sum, h) => sum + parseFloat(h.expected_goals || '0'), 0)
+                        .toFixed(2)
+                    : '0.00'}
+                </td>
+              </tr>
+              <tr>
+                <td className="px-3 py-1 text-xs text-slate-400"></td>
+                <td className="px-3 py-1 text-xs text-slate-400">xA</td>
+                <td className="px-3 py-1 text-right text-xs font-semibold text-white">
+                  {playerSummary && playerSummary.history.length > 0
+                    ? playerSummary.history
+                        .reduce((sum, h) => sum + parseFloat(h.expected_assists || '0'), 0)
+                        .toFixed(2)
+                    : '0.00'}
+                </td>
+              </tr>
+              <tr>
+                <td className="px-3 py-1 text-xs text-slate-400"></td>
+                <td className="px-3 py-1 text-xs text-slate-400">xGI</td>
+                <td className="px-3 py-1 text-right text-xs font-semibold text-white">
+                  {playerSummary && playerSummary.history.length > 0
+                    ? playerSummary.history
+                        .reduce(
+                          (sum, h) => sum + parseFloat(h.expected_goal_involvements || '0'),
                           0
-                        );
-                      }
-                      return playerSummary.history.reduce((sum, h) => sum + h.clean_sheets, 0);
-                    })()
-                  : player.clean_sheets}
-              </div>
-            </div>
-            <div>
-              <div className="text-sm text-slate-400">DefCon (Average)</div>
-              <div className="font-semibold text-white">
-                {playerSummary && playerSummary.history.length > 0
-                  ? (() => {
-                      const gamesPlayed = playerSummary.history.filter((h) => h.minutes > 0)
-                        .length;
-                      const hasDefConField = playerSummary.history.some(
-                        (h) => h.defensive_contribution !== undefined
-                      );
-                      let totalDefCon = 0;
-                      if (hasDefConField) {
-                        totalDefCon = playerSummary.history.reduce(
-                          (sum, h) => sum + (h.defensive_contribution || 0),
-                          0
-                        );
-                      } else {
-                        totalDefCon = playerSummary.history.reduce(
-                          (sum, h) => sum + h.clean_sheets,
-                          0
-                        );
-                      }
-                      return gamesPlayed > 0 ? (totalDefCon / gamesPlayed).toFixed(2) : '0.00';
-                    })()
-                  : '0.00'}
-              </div>
-            </div>
-          </div>
-        </div>
+                        )
+                        .toFixed(2)
+                    : '0.00'}
+                </td>
+              </tr>
+              <tr>
+                <td className="px-3 py-1 text-xs text-slate-400"></td>
+                <td className="px-3 py-1 text-xs text-slate-400">Threat</td>
+                <td className="px-3 py-1 text-right text-xs font-semibold text-white">
+                  {parseFloat(player.threat).toFixed(1)}
+                </td>
+              </tr>
+              <tr>
+                <td className="px-3 py-1 text-xs text-slate-400"></td>
+                <td className="px-3 py-1 text-xs text-slate-400">Creativity</td>
+                <td className="px-3 py-1 text-right text-xs font-semibold text-white">
+                  {parseFloat(player.creativity).toFixed(1)}
+                </td>
+              </tr>
+              <tr>
+                <td className="px-3 py-1 text-xs text-slate-400"></td>
+                <td className="px-3 py-1 text-xs text-slate-400">Influence</td>
+                <td className="px-3 py-1 text-right text-xs font-semibold text-white">
+                  {parseFloat(player.influence).toFixed(1)}
+                </td>
+              </tr>
 
-        {/* Bonus Stats */}
-        <div className="mt-4 border-t border-dark-border pt-4">
-          <h3 className="mb-3 text-sm font-semibold text-slate-300">Bonus Stats</h3>
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-            <div>
-              <div className="text-sm text-slate-400">Bonus Points</div>
-              <div className="font-semibold text-white">{player.bonus}</div>
-            </div>
-            <div>
-              <div className="text-sm text-slate-400">BPS</div>
-              <div className="font-semibold text-white">{player.bps}</div>
-            </div>
-          </div>
+              {/* Defensive Stats */}
+              <tr className="bg-[#2A2A35]/20">
+                <td className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-300" colSpan={3}>
+                  Defensive Stats
+                </td>
+              </tr>
+              <tr>
+                <td className="px-3 py-1 text-xs text-slate-400"></td>
+                <td className="px-3 py-1 text-xs text-slate-400">Clean Sheets</td>
+                <td className="px-3 py-1 text-right text-xs font-semibold text-white">
+                  {player.clean_sheets}
+                </td>
+              </tr>
+              <tr>
+                <td className="px-3 py-1 text-xs text-slate-400"></td>
+                <td className="px-3 py-1 text-xs text-slate-400">Goals Conceded</td>
+                <td className="px-3 py-1 text-right text-xs font-semibold text-white">
+                  {player.goals_conceded}
+                </td>
+              </tr>
+              <tr>
+                <td className="px-3 py-1 text-xs text-slate-400"></td>
+                <td className="px-3 py-1 text-xs text-slate-400">xDC</td>
+                <td className="px-3 py-1 text-right text-xs font-semibold text-white">
+                  {playerSummary && playerSummary.history.length > 0
+                    ? playerSummary.history
+                        .reduce(
+                          (sum, h) => sum + parseFloat(h.expected_goals_conceded || '0'),
+                          0
+                        )
+                        .toFixed(2)
+                    : '0.00'}
+                </td>
+              </tr>
+              <tr>
+                <td className="px-3 py-1 text-xs text-slate-400"></td>
+                <td className="px-3 py-1 text-xs text-slate-400">DefCon (Total)</td>
+                <td className="px-3 py-1 text-right text-xs font-semibold text-white">
+                  {playerSummary && playerSummary.history.length > 0
+                    ? (() => {
+                        const hasDefConField = playerSummary.history.some(
+                          (h) => h.defensive_contribution !== undefined
+                        );
+                        if (hasDefConField) {
+                          return playerSummary.history.reduce(
+                            (sum, h) => sum + (h.defensive_contribution || 0),
+                            0
+                          );
+                        }
+                        return playerSummary.history.reduce((sum, h) => sum + h.clean_sheets, 0);
+                      })()
+                    : player.clean_sheets}
+                </td>
+              </tr>
+              <tr>
+                <td className="px-3 py-1 text-xs text-slate-400"></td>
+                <td className="px-3 py-1 text-xs text-slate-400">DefCon (Average)</td>
+                <td className="px-3 py-1 text-right text-xs font-semibold text-white">
+                  {playerSummary && playerSummary.history.length > 0
+                    ? (() => {
+                        const gamesPlayed = playerSummary.history.filter((h) => h.minutes > 0)
+                          .length;
+                        const hasDefConField = playerSummary.history.some(
+                          (h) => h.defensive_contribution !== undefined
+                        );
+                        let totalDefCon = 0;
+                        if (hasDefConField) {
+                          totalDefCon = playerSummary.history.reduce(
+                            (sum, h) => sum + (h.defensive_contribution || 0),
+                            0
+                          );
+                        } else {
+                          totalDefCon = playerSummary.history.reduce(
+                            (sum, h) => sum + h.clean_sheets,
+                            0
+                          );
+                        }
+                        return gamesPlayed > 0 ? (totalDefCon / gamesPlayed).toFixed(2) : '0.00';
+                      })()
+                    : '0.00'}
+                </td>
+              </tr>
+
+              {/* Bonus Stats */}
+              <tr className="bg-[#2A2A35]/20">
+                <td className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-300" colSpan={3}>
+                  Bonus Stats
+                </td>
+              </tr>
+              <tr>
+                <td className="px-3 py-1 text-xs text-slate-400"></td>
+                <td className="px-3 py-1 text-xs text-slate-400">Bonus Points</td>
+                <td className="px-3 py-1 text-right text-xs font-semibold text-white">
+                  {player.bonus}
+                </td>
+              </tr>
+              <tr>
+                <td className="px-3 py-1 text-xs text-slate-400"></td>
+                <td className="px-3 py-1 text-xs text-slate-400">BPS</td>
+                <td className="px-3 py-1 text-right text-xs font-semibold text-white">
+                  {player.bps}
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
