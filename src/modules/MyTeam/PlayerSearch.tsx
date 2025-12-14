@@ -78,10 +78,10 @@ export function PlayerSearch({
             }}
             onFocus={() => setIsOpen(true)}
             placeholder="Search for a player to compare..."
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-500"
+            className="w-full rounded-md border border-dark-border bg-[#2A2A35] px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20"
           />
           {isOpen && searchQuery.trim() && (
-        <div className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md border border-slate-200 bg-white shadow-lg">
+        <div className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md border border-dark-border bg-[#25252B] shadow-lg">
           {filteredPlayers.length > 0 ? (
             filteredPlayers.map((player) => {
               const isSelected = selectedPlayerIds.includes(player.id);
@@ -90,8 +90,10 @@ export function PlayerSearch({
                   key={player.id}
                   onClick={() => handleSelectPlayer(player.id)}
                   disabled={isSelected}
-                  className={`w-full px-4 py-2 text-left text-sm transition-colors hover:bg-slate-50 ${
-                    isSelected ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'text-slate-900'
+                  className={`w-full px-4 py-2 text-left text-sm transition-colors ${
+                    isSelected 
+                      ? 'bg-[#2A2A35] text-slate-500 cursor-not-allowed' 
+                      : 'text-white hover:bg-[#2A2A35]'
                   }`}
                 >
                   <div className="flex items-center justify-between">
@@ -100,19 +102,19 @@ export function PlayerSearch({
                         {player.web_name}
                         <NewsIndicator news={player.news} />
                       </div>
-                        <div className="text-xs text-slate-500">
+                        <div className="text-xs text-slate-400">
                           {getPositionName(player.element_type)} • {getTeamName(player.team)} • {player.total_points} pts • £{(player.now_cost/10).toFixed(1)}m
                         </div>
                     </div>
                     {isSelected && (
-                      <span className="text-xs text-slate-400">Added</span>
+                      <span className="text-xs text-slate-500">Added</span>
                     )}
                   </div>
                 </button>
               );
             })
           ) : (
-            <div className="px-4 py-2 text-sm text-slate-500">No players found</div>
+            <div className="px-4 py-2 text-sm text-slate-400">No players found</div>
           )}
         </div>
       )}

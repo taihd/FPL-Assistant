@@ -2,6 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from './ThemeToggle';
+import { GameweekDeadline } from './GameweekDeadline';
 
 const navigation = [
   { name: 'Fixtures', href: '/' },
@@ -48,7 +49,12 @@ export function Navbar() {
             })}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-4">
+            {/* Gameweek Deadline - Desktop only */}
+            <div className="hidden lg:block">
+              <GameweekDeadline />
+            </div>
+            
             {/* Theme Toggle */}
             <ThemeToggle />
             
@@ -94,6 +100,10 @@ export function Navbar() {
         {/* Mobile Navigation */}
         {mobileMenuOpen && (
           <div className="border-t border-dark-border py-2 md:hidden">
+            {/* Gameweek Deadline - Mobile */}
+            <div className="px-3 py-2">
+              <GameweekDeadline />
+            </div>
             {navigation.map((item) => {
               const isActive = location.pathname === item.href;
               return (
