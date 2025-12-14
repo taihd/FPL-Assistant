@@ -35,7 +35,7 @@ export function PlayerCard({ player, team, position }: PlayerCardProps) {
   const pointsPerGame = parseFloat(player.points_per_game || '0');
 
   const handleCardClick = () => {
-    navigate(`/my-team/player/${player.id}`);
+    navigate(`/my-team/player/${player.id}`, { state: { from: 'players' } });
   };
 
   return (

@@ -406,7 +406,7 @@ export function PlayersPage() {
                     <tr
                       key={player.id}
                       className="hover:bg-[#2A2A35] transition-colors cursor-pointer"
-                      onClick={() => navigate(`/my-team/player/${player.id}`)}
+                      onClick={() => navigate(`/my-team/player/${player.id}`, { state: { from: 'players' } })}
                     >
                       <td className="whitespace-nowrap px-4 py-3">
                         <div>
@@ -439,7 +439,7 @@ export function PlayersPage() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              navigate(`/my-team/player/${player.id}`);
+                              navigate(`/my-team/player/${player.id}`, { state: { from: 'players' } });
                             }}
                             className="text-slate-400 hover:text-white transition-colors"
                             title="View player details"

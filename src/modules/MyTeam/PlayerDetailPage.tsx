@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAppContext } from '@/context/AppContext';
 import { useTeamContext } from '@/context/TeamContext';
 import { getBootstrapData, getPlayerSummary } from '@/services/api';
@@ -17,8 +17,40 @@ import { formatPrice, getPositionFullName } from '@/lib/utils';
 export function PlayerDetailPage() {
   const { playerId } = useParams<{ playerId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { setScreen, setDataSnapshot } = useAppContext();
   const { teamPlayers } = useTeamContext();
+
+  // Determine back button text and destination based on referrer
+  const getBackInfo = () => {
+    const state = location.state as { from?: string } | null;
+    const from = state?.from;
+    
+    // Check if we came from players page
+    if (from === 'players') {
+      return { text: 'Back to Players', path: '/players' };
+    }
+    
+    // Check document referrer as fallback
+    const referrer = document.referrer;
+    if (referrer && referrer.includes('/players')) {
+      return { text: 'Back to Players', path: '/players' };
+    }
+    
+    // Default to My Team
+    return { text: 'Back to My Team', path: '/my-team' };
+  };
+
+  const { text: backText, path: backPath } = getBackInfo();
+
+  const handleBack = () => {
+    // Try to go back in history, fallback to determined path
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate(backPath);
+    }
+  };
 
   const [player, setPlayer] = useState<Player | null>(null);
   const [playerSummary, setPlayerSummary] = useState<PlayerSummary | null>(null);
@@ -102,10 +134,10 @@ export function PlayerDetailPage() {
     return (
       <div>
         <button
-          onClick={() => navigate('/my-team')}
+          onClick={handleBack}
           className="mb-4 text-sm text-slate-300 hover:text-white"
         >
-          ← Back to My Team
+          ← {backText}
         </button>
         <LoadingSpinner />
       </div>
@@ -116,10 +148,10 @@ export function PlayerDetailPage() {
     return (
       <div>
         <button
-          onClick={() => navigate('/my-team')}
+          onClick={handleBack}
           className="mb-4 text-sm text-slate-300 hover:text-white"
         >
-          ← Back to My Team
+          ← {backText}
         </button>
         <div className="rounded-lg border border-red-500/50 bg-red-500/10 p-6">
           <h2 className="mb-2 text-lg font-semibold text-red-400">Error Loading Player</h2>
@@ -127,10 +159,10 @@ export function PlayerDetailPage() {
             {error?.message || 'Player not found'}
           </p>
           <button
-            onClick={() => navigate('/my-team')}
+            onClick={handleBack}
             className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700"
           >
-            Back to My Team
+            {backText}
           </button>
         </div>
       </div>
@@ -141,10 +173,10 @@ export function PlayerDetailPage() {
     <div className={selectedForCompare.length > 0 ? 'pb-20' : ''}>
       {/* Back Button */}
       <button
-        onClick={() => navigate('/my-team')}
+        onClick={handleBack}
         className="mb-4 text-sm text-slate-300 hover:text-white"
       >
-        ← Back to My Team
+        ← {backText}
       </button>
 
       {/* Player Header */}
