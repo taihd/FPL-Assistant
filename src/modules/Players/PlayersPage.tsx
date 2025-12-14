@@ -45,6 +45,7 @@ export function PlayersPage() {
   const [positions, setPositions] = useState<ElementType[]>([]);
   const [selectedPositions, setSelectedPositions] = useState<number[]>([]);
   const [selectedTeams, setSelectedTeams] = useState<number[]>([]);
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [sortField, setSortField] = useState<SortField>('points');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [selectedPlayerIds, setSelectedPlayerIds] = useState<number[]>([]);
@@ -90,6 +91,15 @@ export function PlayersPage() {
   // Filter and sort players
   const filteredPlayers = useMemo(() => {
     let filtered = players;
+
+    // Search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter((player) => {
+        const fullName = `${player.first_name} ${player.second_name} ${player.web_name}`.toLowerCase();
+        return fullName.includes(query);
+      });
+    }
 
     // Position filter (multi-select)
     if (selectedPositions.length > 0) {
@@ -147,7 +157,7 @@ export function PlayersPage() {
     });
 
     return filtered;
-  }, [players, selectedPositions, selectedTeams, sortField, sortDirection]);
+  }, [players, searchQuery, selectedPositions, selectedTeams, sortField, sortDirection]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -234,6 +244,18 @@ export function PlayersPage() {
 
       {/* Filters */}
       <div className="mb-6 space-y-4 rounded-lg border border-dark-border bg-[#25252B] p-4">
+        {/* Search */}
+        <div>
+          <div className="mb-2 text-sm font-medium text-white">Search Players</div>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search by player name..."
+            className="w-full rounded-md border border-dark-border bg-[#2A2A35] px-4 py-2 text-sm text-white placeholder:text-slate-500 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20"
+          />
+        </div>
+
         {/* Position Filter */}
         <div>
           <div className="mb-2 text-sm font-medium text-white">Position</div>
