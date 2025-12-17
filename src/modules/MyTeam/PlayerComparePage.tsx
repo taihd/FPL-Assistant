@@ -274,8 +274,6 @@ function ComparisonTable({
           return parseFloat(player.threat || '0');
         case 'minutes':
           return player.minutes;
-        case 'cleanSheets':
-          return player.clean_sheets;
         case 'goalsConceded':
           return player.goals_conceded;
         case 'bonus':
@@ -301,6 +299,81 @@ function ComparisonTable({
           }
           return player.clean_sheets;
         }
+        case 'avgMinutes': {
+          const summary = playerSummaries.get(player.id);
+          const starts =
+            summary && summary.history.length > 0
+              ? summary.history.filter((h) => h.starts !== undefined && h.starts > 0).length
+              : summary && summary.history.length > 0
+                ? summary.history.filter((h) => h.minutes > 0).length
+                : 0;
+          return starts > 0 ? player.minutes / starts : 0;
+        }
+        case 'starts': {
+          const summary = playerSummaries.get(player.id);
+          return summary && summary.history.length > 0
+            ? summary.history.reduce(
+                (sum, h) => sum + (h.starts || (h.minutes >= 60 ? 1 : 0)),
+                0
+              )
+            : 0;
+        }
+        case 'xg': {
+          const summary = playerSummaries.get(player.id);
+          return summary && summary.history.length > 0
+            ? summary.history.reduce(
+                (sum, h) => sum + parseFloat(h.expected_goals || '0'),
+                0
+              )
+            : 0;
+        }
+        case 'xa': {
+          const summary = playerSummaries.get(player.id);
+          return summary && summary.history.length > 0
+            ? summary.history.reduce(
+                (sum, h) => sum + parseFloat(h.expected_assists || '0'),
+                0
+              )
+            : 0;
+        }
+        case 'xgi': {
+          const summary = playerSummaries.get(player.id);
+          return summary && summary.history.length > 0
+            ? summary.history.reduce(
+                (sum, h) => sum + parseFloat(h.expected_goal_involvements || '0'),
+                0
+              )
+            : 0;
+        }
+        case 'xdc': {
+          const summary = playerSummaries.get(player.id);
+          return summary && summary.history.length > 0
+            ? summary.history.reduce(
+                (sum, h) => sum + parseFloat(h.expected_goals_conceded || '0'),
+                0
+              )
+            : 0;
+        }
+        case 'defconAverage': {
+          const summary = playerSummaries.get(player.id);
+          if (!summary || summary.history.length === 0) return Infinity; // Use Infinity so N/A won't be highlighted
+          
+          const gamesPlayed = summary.history.filter((h) => h.minutes > 0).length;
+          if (gamesPlayed === 0) return Infinity;
+
+          const hasDefConField = summary.history.some(
+            (h) => h.defensive_contribution !== undefined
+          );
+          
+          if (!hasDefConField) return Infinity; // Use Infinity so N/A won't be highlighted (lower is better)
+
+          const totalDefCon = summary.history.reduce(
+            (sum, h) => sum + (h.defensive_contribution || 0),
+            0
+          );
+
+          return totalDefCon / gamesPlayed;
+        }
         default:
           return 0;
       }
@@ -313,14 +386,21 @@ function ComparisonTable({
       'ict',
       'ownership',
       'minutes',
+      'avgMinutes',
+      'starts',
       'goals',
       'assists',
+      'xg',
+      'xa',
+      'xgi',
       'threat',
       'creativity',
       'influence',
       'cleanSheets',
       'goalsConceded',
+      'xdc',
       'defensiveContribution',
+      'defconAverage',
       'bonus',
       'bps',
     ];
@@ -499,7 +579,7 @@ function ComparisonTable({
               <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
                 Avg Minutes (by Starts)
               </td>
-              {players.map((player) => {
+              {players.map((player, index) => {
                 const summary = playerSummaries.get(player.id);
                 const starts =
                   summary && summary.history.length > 0
@@ -511,7 +591,11 @@ function ComparisonTable({
                 return (
                   <td
                     key={player.id}
-                    className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300"
+                    className={getCellClassName(
+                      'avgMinutes',
+                      index,
+                      'whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300'
+                    )}
                   >
                     {avgMinutes}
                   </td>
@@ -522,7 +606,7 @@ function ComparisonTable({
               <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
                 Starts
               </td>
-              {players.map((player) => {
+              {players.map((player, index) => {
                 const summary = playerSummaries.get(player.id);
                 const starts =
                   summary && summary.history.length > 0
@@ -534,7 +618,11 @@ function ComparisonTable({
                 return (
                   <td
                     key={player.id}
-                    className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300"
+                    className={getCellClassName(
+                      'starts',
+                      index,
+                      'whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300'
+                    )}
                   >
                     {starts}
                   </td>
@@ -589,7 +677,7 @@ function ComparisonTable({
               <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
                 xG (Expected Goals)
               </td>
-              {players.map((player) => {
+              {players.map((player, index) => {
                 const summary = playerSummaries.get(player.id);
                 const xg =
                   summary && summary.history.length > 0
@@ -601,7 +689,11 @@ function ComparisonTable({
                 return (
                   <td
                     key={player.id}
-                    className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300"
+                    className={getCellClassName(
+                      'xg',
+                      index,
+                      'whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300'
+                    )}
                   >
                     {xg.toFixed(2)}
                   </td>
@@ -612,7 +704,7 @@ function ComparisonTable({
               <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
                 xA (Expected Assists)
               </td>
-              {players.map((player) => {
+              {players.map((player, index) => {
                 const summary = playerSummaries.get(player.id);
                 const xa =
                   summary && summary.history.length > 0
@@ -624,7 +716,11 @@ function ComparisonTable({
                 return (
                   <td
                     key={player.id}
-                    className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300"
+                    className={getCellClassName(
+                      'xa',
+                      index,
+                      'whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300'
+                    )}
                   >
                     {xa.toFixed(2)}
                   </td>
@@ -635,7 +731,7 @@ function ComparisonTable({
               <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
                 xGI (Expected Goal Involvements)
               </td>
-              {players.map((player) => {
+              {players.map((player, index) => {
                 const summary = playerSummaries.get(player.id);
                 const xgi =
                   summary && summary.history.length > 0
@@ -647,7 +743,11 @@ function ComparisonTable({
                 return (
                   <td
                     key={player.id}
-                    className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300"
+                    className={getCellClassName(
+                      'xgi',
+                      index,
+                      'whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300'
+                    )}
                   >
                     {xgi.toFixed(2)}
                   </td>
@@ -791,7 +891,7 @@ function ComparisonTable({
               <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
                 xDC (Expected Goals Conceded)
               </td>
-              {players.map((player) => {
+              {players.map((player, index) => {
                 const summary = playerSummaries.get(player.id);
                 const xdc =
                   summary && summary.history.length > 0
@@ -803,7 +903,11 @@ function ComparisonTable({
                 return (
                   <td
                     key={player.id}
-                    className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300"
+                    className={getCellClassName(
+                      'xdc',
+                      index,
+                      'whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300'
+                    )}
                   >
                     {xdc.toFixed(2)}
                   </td>
@@ -852,16 +956,17 @@ function ComparisonTable({
               <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
                 DefCon (Average)
               </td>
-              {players.map((player) => {
+              {players.map((player, index) => {
                 const summary = playerSummaries.get(player.id);
                 const gamesPlayed =
                   summary && summary.history.length > 0
                     ? summary.history.filter((h) => h.minutes > 0).length
                     : 0;
-                let defensiveContribution = player.clean_sheets;
+                let defensiveContribution = 0;
+                let hasDefConField = false;
                 if (summary && summary.history.length > 0) {
                   // Check if defensive_contribution field exists
-                  const hasDefConField = summary.history.some(
+                  hasDefConField = summary.history.some(
                     (h) => h.defensive_contribution !== undefined
                   );
                   if (hasDefConField) {
@@ -869,19 +974,22 @@ function ComparisonTable({
                       (sum, h) => sum + (h.defensive_contribution || 0),
                       0
                     );
-                  } else {
-                    defensiveContribution = summary.history.reduce(
-                      (sum, h) => sum + h.clean_sheets,
-                      0
-                    );
                   }
                 }
                 const avgDefensiveContribution =
-                  gamesPlayed > 0 ? (defensiveContribution / gamesPlayed).toFixed(2) : '0.00';
+                  !hasDefConField
+                    ? 'N/A'
+                    : gamesPlayed > 0
+                      ? (defensiveContribution / gamesPlayed).toFixed(2)
+                      : '0.00';
                 return (
                   <td
                     key={player.id}
-                    className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300"
+                    className={getCellClassName(
+                      'defconAverage',
+                      index,
+                      'whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300'
+                    )}
                   >
                     {avgDefensiveContribution}
                   </td>

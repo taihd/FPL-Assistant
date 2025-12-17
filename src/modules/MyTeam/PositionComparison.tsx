@@ -1,6 +1,8 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Player, Team, ElementType } from '@/types/fpl';
+import type { PlayerSummary } from '@/types/player';
+import { getPlayerSummary } from '@/services/api';
 import { formatPrice, getPositionName } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { NewsIndicator } from '@/components/NewsIndicator';
@@ -40,6 +42,8 @@ export function PositionComparison({
   onAddToCompare,
 }: PositionComparisonProps) {
   const navigate = useNavigate();
+  const [playerSummaries, setPlayerSummaries] = useState<Map<number, PlayerSummary>>(new Map());
+  const [loadingSummaries, setLoadingSummaries] = useState(false);
 
   // Get top players in same position, excluding current player
   const topPlayers = useMemo(() => {
@@ -48,6 +52,35 @@ export function PositionComparison({
       .sort((a, b) => b.total_points - a.total_points)
       .slice(0, limit);
   }, [allPlayers, currentPlayer.element_type, currentPlayer.id, limit]);
+
+  // Fetch player summaries for average defcon calculation
+  useEffect(() => {
+    const position = currentPlayer.element_type;
+    const needsDefcon = position === 2 || position === 3; // DEF or MID
+
+    if (!needsDefcon || topPlayers.length === 0) {
+      return;
+    }
+
+    setLoadingSummaries(true);
+    const fetchSummaries = async () => {
+      const summaries = new Map<number, PlayerSummary>();
+      const promises = topPlayers.map(async (player) => {
+        try {
+          const summary = await getPlayerSummary(player.id);
+          summaries.set(player.id, summary);
+        } catch (error) {
+          console.error(`Failed to fetch summary for player ${player.id}:`, error);
+        }
+      });
+
+      await Promise.all(promises);
+      setPlayerSummaries(summaries);
+      setLoadingSummaries(false);
+    };
+
+    fetchSummaries();
+  }, [topPlayers, currentPlayer.element_type]);
 
   const handleAddToCompare = (playerId: number) => {
     if (onAddToCompare) {
@@ -62,6 +95,39 @@ export function PositionComparison({
     const team = teams.find((t) => t.id === teamId);
     return team ? team.short_name : `Team ${teamId}`;
   };
+
+  // Calculate average defcon from player summary history
+  const getAverageDefcon = (player: Player): string => {
+    const summary = playerSummaries.get(player.id);
+    if (!summary || summary.history.length === 0) {
+      return loadingSummaries ? '...' : 'N/A';
+    }
+
+    const gamesPlayed = summary.history.filter((h) => h.minutes > 0).length;
+    if (gamesPlayed === 0) return '0.00';
+
+    // Check if defensive_contribution field exists
+    const hasDefConField = summary.history.some(
+      (h) => h.defensive_contribution !== undefined
+    );
+
+    if (!hasDefConField) {
+      return 'N/A';
+    }
+
+    const totalDefCon = summary.history.reduce(
+      (sum, h) => sum + (h.defensive_contribution || 0),
+      0
+    );
+
+    return (totalDefCon / gamesPlayed).toFixed(2);
+  };
+
+  // Determine which columns to show based on position
+  const position = currentPlayer.element_type;
+  const showDefensiveStats = position === 1 || position === 2 || position === 3; // GK, DEF, MID
+  const showGoalsConceded = position === 1 || position === 2; // GK, DEF only (not MID)
+  const showAverageDefcon = position === 2 || position === 3; // DEF, MID only
 
   if (topPlayers.length === 0) {
     return (
@@ -104,6 +170,21 @@ export function PositionComparison({
               <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-slate-400">
                 Assists
               </th>
+              {showDefensiveStats && (
+                <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-slate-400">
+                  Clean Sheets
+                </th>
+              )}
+              {showGoalsConceded && (
+                <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-slate-400">
+                  Goals Conceded
+                </th>
+              )}
+              {showAverageDefcon && (
+                <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-slate-400">
+                  Avg DefCon
+                </th>
+              )}
               <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-slate-400">
                 Action
               </th>
@@ -158,6 +239,21 @@ export function PositionComparison({
                   <td className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300">
                     {player.assists}
                   </td>
+                  {showDefensiveStats && (
+                    <td className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300">
+                      {player.clean_sheets}
+                    </td>
+                  )}
+                  {showGoalsConceded && (
+                    <td className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300">
+                      {player.goals_conceded}
+                    </td>
+                  )}
+                  {showAverageDefcon && (
+                    <td className="whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300">
+                      {getAverageDefcon(player)}
+                    </td>
+                  )}
                   <td className="whitespace-nowrap px-4 py-3 text-center">
                     {selectedForCompare.includes(player.id) ? (
                       <span className="rounded-md bg-green-500/20 px-3 py-1.5 text-xs font-medium text-green-400 border border-green-500/30">
