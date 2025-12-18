@@ -1,9 +1,20 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { groundSearch } from './grounding';
+import type { Player, Team, Fixture } from '@/types/fpl';
 
 interface Message {
   role: 'user' | 'assistant';
   content: string;
+}
+
+import type { Event } from '@/types/fpl';
+
+interface FPLGlobalData {
+  allPlayers?: Player[];
+  allTeams?: Team[];
+  currentGameweek?: number | null;
+  upcomingFixtures?: Fixture[];
+  events?: Event[];
 }
 
 interface AskFPLAssistantParams {
@@ -11,6 +22,7 @@ interface AskFPLAssistantParams {
   dataSnapshot: unknown;
   question: string;
   conversationHistory?: Message[];
+  globalFPLData?: FPLGlobalData;
 }
 
 export async function askFPLAssistant({
@@ -18,6 +30,7 @@ export async function askFPLAssistant({
   dataSnapshot,
   question,
   conversationHistory = [],
+  globalFPLData,
 }: AskFPLAssistantParams): Promise<string> {
   const geminiKey = import.meta.env.VITE_GEMINI_API_KEY;
   const openaiKey = import.meta.env.VITE_OPENAI_API_KEY;
@@ -30,9 +43,9 @@ export async function askFPLAssistant({
 
   // Prefer Gemini, fallback to OpenAI
   if (geminiKey) {
-    return askWithGemini({ screen, dataSnapshot, question, conversationHistory, apiKey: geminiKey });
+    return askWithGemini({ screen, dataSnapshot, question, conversationHistory, globalFPLData, apiKey: geminiKey });
   } else if (openaiKey) {
-    return askWithOpenAI({ screen, dataSnapshot, question, conversationHistory, apiKey: openaiKey });
+    return askWithOpenAI({ screen, dataSnapshot, question, conversationHistory, globalFPLData, apiKey: openaiKey });
   }
   
   throw new Error('No AI API key configured');
@@ -43,6 +56,7 @@ async function askWithGemini({
   dataSnapshot,
   question,
   conversationHistory = [],
+  globalFPLData,
   apiKey,
 }: AskFPLAssistantParams & { apiKey: string }): Promise<string> {
   try {
@@ -58,7 +72,17 @@ async function askWithGemini({
     console.log('[AI Agent] Google Search Grounding enabled:', isGoogleGroundingEnabled);
     
     try {
-      groundedData = await groundSearch({ question, screen, dataSnapshot });
+      // Pass cached data to grounding if available
+      groundedData = await groundSearch({ 
+        question, 
+        screen, 
+        dataSnapshot,
+        cachedBootstrap: globalFPLData && globalFPLData.allPlayers && globalFPLData.allTeams ? {
+          elements: globalFPLData.allPlayers as Player[],
+          teams: globalFPLData.allTeams as Team[],
+        } : undefined,
+        cachedFixtures: (globalFPLData?.upcomingFixtures as Fixture[]) || undefined,
+      });
       console.log('[AI Agent] Grounding data retrieved:', {
         hasPlayers: !!groundedData?.relevantPlayers?.length,
         hasTeams: !!groundedData?.relevantTeams?.length,
@@ -161,6 +185,249 @@ You can provide detailed comparisons, recommendations on which player to choose,
       }
     } else {
       contextDescription = `The user is on the ${screen} page.`;
+    }
+
+    // Add global FPL data context
+    if (globalFPLData) {
+      let globalContext = '\n\n=== GLOBAL FPL DATA (Available for all questions) ===\n';
+      
+      if (globalFPLData.currentGameweek) {
+        globalContext += `Current Gameweek: ${globalFPLData.currentGameweek}\n`;
+      }
+
+      if (globalFPLData.allPlayers && globalFPLData.allPlayers.length > 0) {
+        // Top players by position
+        const topByPosition = {
+          GK: globalFPLData.allPlayers.filter((p: Player) => p.element_type === 1).sort((a, b) => b.total_points - a.total_points).slice(0, 5),
+          DEF: globalFPLData.allPlayers.filter((p: Player) => p.element_type === 2).sort((a, b) => b.total_points - a.total_points).slice(0, 5),
+          MID: globalFPLData.allPlayers.filter((p: Player) => p.element_type === 3).sort((a, b) => b.total_points - a.total_points).slice(0, 5),
+          FWD: globalFPLData.allPlayers.filter((p: Player) => p.element_type === 4).sort((a, b) => b.total_points - a.total_points).slice(0, 5),
+        };
+
+        globalContext += `\nTop Players by Position (with prices):\n`;
+        if (topByPosition.GK.length > 0) {
+          globalContext += `GK: ${topByPosition.GK.map((p: Player) => `${p.web_name} (${p.total_points}pts, £${(p.now_cost/10).toFixed(1)}m)`).join(', ')}\n`;
+        }
+        if (topByPosition.DEF.length > 0) {
+          globalContext += `DEF: ${topByPosition.DEF.map((p: Player) => `${p.web_name} (${p.total_points}pts, £${(p.now_cost/10).toFixed(1)}m)`).join(', ')}\n`;
+        }
+        if (topByPosition.MID.length > 0) {
+          globalContext += `MID: ${topByPosition.MID.map((p: Player) => `${p.web_name} (${p.total_points}pts, £${(p.now_cost/10).toFixed(1)}m)`).join(', ')}\n`;
+        }
+        if (topByPosition.FWD.length > 0) {
+          globalContext += `FWD: ${topByPosition.FWD.map((p: Player) => `${p.web_name} (${p.total_points}pts, £${(p.now_cost/10).toFixed(1)}m)`).join(', ')}\n`;
+        }
+
+        globalContext += `\nTotal Players Available: ${globalFPLData.allPlayers.length}\n`;
+
+        // Add players grouped by team (for team-specific queries)
+        if (globalFPLData.allTeams) {
+          const teamMap = new Map<number, Team>();
+          globalFPLData.allTeams.forEach((t: Team) => {
+            teamMap.set(t.id, t);
+          });
+
+          globalContext += `\n\nPlayers by Team (with prices, points, goals, assists):\n`;
+          const playersByTeam = new Map<number, Player[]>();
+          globalFPLData.allPlayers.forEach((p: Player) => {
+            if (!playersByTeam.has(p.team)) {
+              playersByTeam.set(p.team, []);
+            }
+            playersByTeam.get(p.team)!.push(p);
+          });
+
+          // Sort teams by name for consistency
+          const sortedTeams = Array.from(playersByTeam.entries())
+            .map(([teamId, players]) => ({
+              team: teamMap.get(teamId),
+              players: players.sort((a, b) => b.total_points - a.total_points),
+            }))
+            .filter(item => item.team !== undefined)
+            .sort((a, b) => (a.team?.name || '').localeCompare(b.team?.name || ''));
+
+          sortedTeams.forEach(({ team, players }) => {
+            if (!team) return;
+            globalContext += `\n${team.short_name} (${team.name}):\n`;
+            players.forEach((p: Player) => {
+              const pos = ['GK', 'DEF', 'MID', 'FWD'][p.element_type - 1] || 'UNK';
+              globalContext += `  - ${p.web_name} (${p.first_name} ${p.second_name}): ${pos}, £${(p.now_cost/10).toFixed(1)}m, ${p.total_points}pts, PPG:${p.points_per_game}, Form:${p.form}, Owned:${p.selected_by_percent}%, `;
+              globalContext += `Goals:${p.goals_scored}, Assists:${p.assists}, CS:${p.clean_sheets}, GC:${p.goals_conceded}, Mins:${p.minutes}, `;
+              globalContext += `Saves:${p.saves}, Bonus:${p.bonus}, BPS:${p.bps}, YC:${p.yellow_cards}, RC:${p.red_cards}, `;
+              globalContext += `ICT:${p.ict_index}, Influence:${p.influence}, Creativity:${p.creativity}, Threat:${p.threat}, `;
+              globalContext += `ValueForm:${p.value_form}, ValueSeason:${p.value_season}, `;
+              globalContext += `TransfersIn:${p.transfers_in}, TransfersOut:${p.transfers_out}, TransfersInGW:${p.transfers_in_event}, TransfersOutGW:${p.transfers_out_event}`;
+              if (p.news && p.news.trim()) globalContext += `, News:[${p.news}]`;
+              if (p.chance_of_playing_this_round !== null) globalContext += `, ChanceThisGW:${p.chance_of_playing_this_round}%`;
+              if (p.chance_of_playing_next_round !== null) globalContext += `, ChanceNextGW:${p.chance_of_playing_next_round}%`;
+              globalContext += `\n`;
+            });
+          });
+        }
+      }
+
+      if (globalFPLData.allTeams && globalFPLData.allTeams.length > 0) {
+        globalContext += `\nAll Teams with Strength Ratings:\n`;
+        globalFPLData.allTeams.forEach((t: Team) => {
+          globalContext += `${t.short_name} (${t.name}): Strength ${t.strength}, Attack H/A ${t.strength_attack_home}/${t.strength_attack_away}, Defence H/A ${t.strength_defence_home}/${t.strength_defence_away}\n`;
+        });
+      }
+
+      // Add ALL fixtures (historical and upcoming)
+      if (globalFPLData.upcomingFixtures && globalFPLData.upcomingFixtures.length > 0 && globalFPLData.allTeams) {
+        const teamMap = new Map<number, Team>();
+        globalFPLData.allTeams.forEach((t: Team) => {
+          teamMap.set(t.id, t);
+        });
+
+        // Group fixtures by gameweek
+        const fixturesByGW = new Map<number, Fixture[]>();
+        globalFPLData.upcomingFixtures.forEach((f: Fixture) => {
+          const gw = f.event || 0;
+          if (!fixturesByGW.has(gw)) {
+            fixturesByGW.set(gw, []);
+          }
+          fixturesByGW.get(gw)!.push(f);
+        });
+
+        globalContext += `\n\nALL FIXTURES (Historical & Upcoming) by Gameweek:\n`;
+        const sortedGWs = Array.from(fixturesByGW.keys()).sort((a, b) => a - b);
+        sortedGWs.forEach(gw => {
+          const fixtures = fixturesByGW.get(gw) || [];
+          globalContext += `\nGW${gw}:\n`;
+          fixtures.forEach((f: Fixture) => {
+            const home = teamMap.get(f.team_h)?.short_name || `Team${f.team_h}`;
+            const away = teamMap.get(f.team_a)?.short_name || `Team${f.team_a}`;
+            const kickoff = f.kickoff_time ? new Date(f.kickoff_time).toLocaleString('en-GB', { 
+              weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' 
+            }) : 'TBD';
+            const score = f.finished ? `${f.team_h_score}-${f.team_a_score}` : 'vs';
+            const status = f.finished ? 'Finished' : (f.started ? 'In Progress' : 'Upcoming');
+            globalContext += `  ${home} ${score} ${away} | ${kickoff} | ${status} | Difficulty: H${f.team_h_difficulty}/A${f.team_a_difficulty}\n`;
+          });
+        });
+      }
+
+      // Add gameweek deadlines (next 5 gameweeks)
+      if (globalFPLData.events && globalFPLData.events.length > 0) {
+        const upcomingEvents = globalFPLData.events
+          .filter((e: Event) => !e.finished && e.deadline_time)
+          .sort((a: Event, b: Event) => a.id - b.id)
+          .slice(0, 5);
+        
+        if (upcomingEvents.length > 0) {
+          globalContext += `\n\nUpcoming Gameweek Deadlines:\n`;
+          upcomingEvents.forEach((e: Event) => {
+            const deadline = new Date(e.deadline_time).toLocaleString('en-GB', {
+              weekday: 'short',
+              day: 'numeric',
+              month: 'short',
+              hour: '2-digit',
+              minute: '2-digit',
+            });
+            globalContext += `GW${e.id}: ${deadline}${e.is_current ? ' (Current)' : ''}${e.is_next ? ' (Next)' : ''}\n`;
+          });
+        }
+      }
+
+      if (globalFPLData.upcomingFixtures && globalFPLData.upcomingFixtures.length > 0 && globalFPLData.allTeams) {
+        const upcoming = globalFPLData.upcomingFixtures.filter((f: Fixture) => !f.finished && f.event !== null);
+        const currentGW = globalFPLData.currentGameweek || 1;
+        
+        // Create team map for quick lookup
+        const teamMap = new Map<number, Team>();
+        globalFPLData.allTeams.forEach((t: Team) => {
+          teamMap.set(t.id, t);
+        });
+
+        // Group fixtures by team and get next 6 for each team
+        const teamFixtures = new Map<number, Array<{ gw: number; difficulty: number; opponent: string; isHome: boolean }>>();
+        
+        upcoming.forEach((f: Fixture) => {
+          if (!f.event) return;
+          
+          const homeTeam = teamMap.get(f.team_h);
+          const awayTeam = teamMap.get(f.team_a);
+          
+          if (!homeTeam || !awayTeam) return;
+
+          // Add fixture for home team
+          if (!teamFixtures.has(f.team_h)) {
+            teamFixtures.set(f.team_h, []);
+          }
+          teamFixtures.get(f.team_h)!.push({
+            gw: f.event,
+            difficulty: f.team_h_difficulty,
+            opponent: awayTeam.short_name,
+            isHome: true,
+          });
+
+          // Add fixture for away team
+          if (!teamFixtures.has(f.team_a)) {
+            teamFixtures.set(f.team_a, []);
+          }
+          teamFixtures.get(f.team_a)!.push({
+            gw: f.event,
+            difficulty: f.team_a_difficulty,
+            opponent: homeTeam.short_name,
+            isHome: false,
+          });
+        });
+
+        // Sort fixtures by gameweek and get next 6 for each team
+        const teamFixtureSummary: Array<{ team: Team; fixtures: Array<{ gw: number; difficulty: number; opponent: string; isHome: boolean }>; avgDifficulty: number }> = [];
+        
+        teamFixtures.forEach((fixtures, teamId) => {
+          const team = teamMap.get(teamId);
+          if (!team) return;
+
+          // Sort by gameweek and take next 6
+          const sortedFixtures = fixtures
+            .filter(f => f.gw >= currentGW)
+            .sort((a, b) => a.gw - b.gw)
+            .slice(0, 6);
+
+          if (sortedFixtures.length > 0) {
+            const avgDifficulty = sortedFixtures.reduce((sum, f) => sum + f.difficulty, 0) / sortedFixtures.length;
+            teamFixtureSummary.push({
+              team,
+              fixtures: sortedFixtures,
+              avgDifficulty,
+            });
+          }
+        });
+
+        // Sort by average difficulty (lower is better)
+        teamFixtureSummary.sort((a, b) => a.avgDifficulty - b.avgDifficulty);
+
+        globalContext += `\n\nNext 6 Fixtures by Team (sorted by average difficulty, lower is better):\n`;
+        teamFixtureSummary.slice(0, 20).forEach(({ team, fixtures, avgDifficulty }) => {
+          const fixtureStr = fixtures.map(f => 
+            `GW${f.gw} ${f.isHome ? 'H' : 'A'} vs ${f.opponent} (${f.difficulty})`
+          ).join(', ');
+          globalContext += `${team.short_name} (${team.name}): Avg ${avgDifficulty.toFixed(2)} - ${fixtureStr}\n`;
+        });
+
+        // Also include ALL upcoming fixtures for ALL teams (for comprehensive queries)
+        globalContext += `\n\nALL Upcoming Fixtures by Team (for detailed queries):\n`;
+        teamFixtures.forEach((fixtures, teamId) => {
+          const team = teamMap.get(teamId);
+          if (!team) return;
+
+          const sortedFixtures = fixtures
+            .filter(f => f.gw >= currentGW)
+            .sort((a, b) => a.gw - b.gw);
+
+          if (sortedFixtures.length > 0) {
+            const fixtureStr = sortedFixtures.map(f => 
+              `GW${f.gw} ${f.isHome ? 'H' : 'A'} vs ${f.opponent} (${f.difficulty})`
+            ).join(', ');
+            globalContext += `${team.short_name} (${team.name}): ${fixtureStr}\n`;
+          }
+        });
+      }
+
+      globalContext += '\n=== END GLOBAL FPL DATA ===\n';
+      contextDescription += globalContext;
     }
 
     // Add grounded data to context with detailed information
@@ -271,6 +538,7 @@ async function askWithOpenAI({
   dataSnapshot,
   question,
   conversationHistory = [],
+  globalFPLData,
   apiKey,
 }: AskFPLAssistantParams & { apiKey: string }): Promise<string> {
   // Format context based on screen
@@ -309,6 +577,287 @@ async function askWithOpenAI({
     }
   } else {
     contextDescription = `The user is on the ${screen} page.`;
+  }
+
+  // Add global FPL data context
+  if (globalFPLData) {
+    let globalContext = '\n\n=== GLOBAL FPL DATA (Available for all questions) ===\n';
+    
+    if (globalFPLData.currentGameweek) {
+      globalContext += `Current Gameweek: ${globalFPLData.currentGameweek}\n`;
+    }
+
+    if (globalFPLData.allPlayers && globalFPLData.allPlayers.length > 0) {
+      const topByPosition = {
+        GK: globalFPLData.allPlayers.filter((p: Player) => p.element_type === 1).sort((a, b) => b.total_points - a.total_points).slice(0, 5),
+        DEF: globalFPLData.allPlayers.filter((p: Player) => p.element_type === 2).sort((a, b) => b.total_points - a.total_points).slice(0, 5),
+        MID: globalFPLData.allPlayers.filter((p: Player) => p.element_type === 3).sort((a, b) => b.total_points - a.total_points).slice(0, 5),
+        FWD: globalFPLData.allPlayers.filter((p: Player) => p.element_type === 4).sort((a, b) => b.total_points - a.total_points).slice(0, 5),
+      };
+
+      globalContext += `\nTop Players by Position (with prices):\n`;
+      if (topByPosition.GK.length > 0) {
+        globalContext += `GK: ${topByPosition.GK.map((p: Player) => `${p.web_name} (${p.total_points}pts, £${(p.now_cost/10).toFixed(1)}m)`).join(', ')}\n`;
+      }
+      if (topByPosition.DEF.length > 0) {
+        globalContext += `DEF: ${topByPosition.DEF.map((p: Player) => `${p.web_name} (${p.total_points}pts, £${(p.now_cost/10).toFixed(1)}m)`).join(', ')}\n`;
+      }
+      if (topByPosition.MID.length > 0) {
+        globalContext += `MID: ${topByPosition.MID.map((p: Player) => `${p.web_name} (${p.total_points}pts, £${(p.now_cost/10).toFixed(1)}m)`).join(', ')}\n`;
+      }
+      if (topByPosition.FWD.length > 0) {
+        globalContext += `FWD: ${topByPosition.FWD.map((p: Player) => `${p.web_name} (${p.total_points}pts, £${(p.now_cost/10).toFixed(1)}m)`).join(', ')}\n`;
+      }
+      globalContext += `\nTotal Players Available: ${globalFPLData.allPlayers.length}\n`;
+
+      // Add players grouped by team (for team-specific queries)
+      if (globalFPLData.allTeams) {
+        const teamMap = new Map<number, Team>();
+        globalFPLData.allTeams.forEach((t: Team) => {
+          teamMap.set(t.id, t);
+        });
+
+        globalContext += `\n\nPlayers by Team (with prices, points, goals, assists):\n`;
+        const playersByTeam = new Map<number, Player[]>();
+        globalFPLData.allPlayers.forEach((p: Player) => {
+          if (!playersByTeam.has(p.team)) {
+            playersByTeam.set(p.team, []);
+          }
+          playersByTeam.get(p.team)!.push(p);
+        });
+
+        // Sort teams by name for consistency
+        const sortedTeams = Array.from(playersByTeam.entries())
+          .map(([teamId, players]) => ({
+            team: teamMap.get(teamId),
+            players: players.sort((a, b) => b.total_points - a.total_points),
+          }))
+          .filter(item => item.team !== undefined)
+          .sort((a, b) => (a.team?.name || '').localeCompare(b.team?.name || ''));
+
+        sortedTeams.forEach(({ team, players }) => {
+          if (!team) return;
+          globalContext += `\n${team.short_name} (${team.name}):\n`;
+          players.forEach((p: Player) => {
+            const pos = ['GK', 'DEF', 'MID', 'FWD'][p.element_type - 1] || 'UNK';
+            globalContext += `  - ${p.web_name} (${p.first_name} ${p.second_name}): ${pos}, £${(p.now_cost/10).toFixed(1)}m, ${p.total_points}pts, PPG:${p.points_per_game}, Form:${p.form}, Owned:${p.selected_by_percent}%, `;
+            globalContext += `Goals:${p.goals_scored}, Assists:${p.assists}, CS:${p.clean_sheets}, GC:${p.goals_conceded}, Mins:${p.minutes}, `;
+            globalContext += `Saves:${p.saves}, Bonus:${p.bonus}, BPS:${p.bps}, YC:${p.yellow_cards}, RC:${p.red_cards}, `;
+            globalContext += `ICT:${p.ict_index}, Influence:${p.influence}, Creativity:${p.creativity}, Threat:${p.threat}, `;
+            globalContext += `ValueForm:${p.value_form}, ValueSeason:${p.value_season}, `;
+            globalContext += `TransfersIn:${p.transfers_in}, TransfersOut:${p.transfers_out}, TransfersInGW:${p.transfers_in_event}, TransfersOutGW:${p.transfers_out_event}`;
+            if (p.news && p.news.trim()) globalContext += `, News:[${p.news}]`;
+            if (p.chance_of_playing_this_round !== null) globalContext += `, ChanceThisGW:${p.chance_of_playing_this_round}%`;
+            if (p.chance_of_playing_next_round !== null) globalContext += `, ChanceNextGW:${p.chance_of_playing_next_round}%`;
+            globalContext += `\n`;
+          });
+        });
+      }
+    }
+
+    if (globalFPLData.allTeams && globalFPLData.allTeams.length > 0) {
+      globalContext += `\nAll Teams with Strength Ratings:\n`;
+      globalFPLData.allTeams.forEach((t: Team) => {
+        globalContext += `${t.short_name} (${t.name}): Strength ${t.strength}, Attack H/A ${t.strength_attack_home}/${t.strength_attack_away}, Defence H/A ${t.strength_defence_home}/${t.strength_defence_away}\n`;
+      });
+    }
+
+    // Add ALL fixtures (historical and upcoming)
+    if (globalFPLData.upcomingFixtures && globalFPLData.upcomingFixtures.length > 0 && globalFPLData.allTeams) {
+      const teamMap = new Map<number, Team>();
+      globalFPLData.allTeams.forEach((t: Team) => {
+        teamMap.set(t.id, t);
+      });
+
+      // Group fixtures by gameweek
+      const fixturesByGW = new Map<number, Fixture[]>();
+      globalFPLData.upcomingFixtures.forEach((f: Fixture) => {
+        const gw = f.event || 0;
+        if (!fixturesByGW.has(gw)) {
+          fixturesByGW.set(gw, []);
+        }
+        fixturesByGW.get(gw)!.push(f);
+      });
+
+      globalContext += `\n\nALL FIXTURES (Historical & Upcoming) by Gameweek:\n`;
+      const sortedGWs = Array.from(fixturesByGW.keys()).sort((a, b) => a - b);
+      sortedGWs.forEach(gw => {
+        const fixtures = fixturesByGW.get(gw) || [];
+        globalContext += `\nGW${gw}:\n`;
+        fixtures.forEach((f: Fixture) => {
+          const home = teamMap.get(f.team_h)?.short_name || `Team${f.team_h}`;
+          const away = teamMap.get(f.team_a)?.short_name || `Team${f.team_a}`;
+          const kickoff = f.kickoff_time ? new Date(f.kickoff_time).toLocaleString('en-GB', { 
+            weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' 
+          }) : 'TBD';
+          const score = f.finished ? `${f.team_h_score}-${f.team_a_score}` : 'vs';
+          const status = f.finished ? 'Finished' : (f.started ? 'In Progress' : 'Upcoming');
+          globalContext += `  ${home} ${score} ${away} | ${kickoff} | ${status} | Difficulty: H${f.team_h_difficulty}/A${f.team_a_difficulty}\n`;
+        });
+      });
+    }
+
+    // Add gameweek deadlines (all gameweeks)
+    if (globalFPLData.events && globalFPLData.events.length > 0) {
+      globalContext += `\n\nALL Gameweeks Information:\n`;
+      globalFPLData.events.forEach((e: Event) => {
+        const deadline = new Date(e.deadline_time).toLocaleString('en-GB', {
+          weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
+        });
+        let status = e.finished ? 'Finished' : (e.is_current ? 'Current' : (e.is_next ? 'Next' : 'Upcoming'));
+        globalContext += `GW${e.id}: ${deadline} | ${status} | AvgScore:${e.average_entry_score || 'N/A'} | HighestScore:${e.highest_score || 'N/A'} | Transfers:${e.transfers_made || 0}\n`;
+      });
+    }
+
+    if (globalFPLData.upcomingFixtures && globalFPLData.upcomingFixtures.length > 0 && globalFPLData.allTeams) {
+      const upcoming = globalFPLData.upcomingFixtures.filter((f: Fixture) => !f.finished && f.event !== null);
+      const currentGW = globalFPLData.currentGameweek || 1;
+      
+      // Create team map for quick lookup
+      const teamMap = new Map<number, Team>();
+      globalFPLData.allTeams.forEach((t: Team) => {
+        teamMap.set(t.id, t);
+      });
+
+      // Group fixtures by team and get next 6 for each team
+      const teamFixtures = new Map<number, Array<{ gw: number; difficulty: number; opponent: string; isHome: boolean }>>();
+      
+      upcoming.forEach((f: Fixture) => {
+        if (!f.event) return;
+        
+        const homeTeam = teamMap.get(f.team_h);
+        const awayTeam = teamMap.get(f.team_a);
+        
+        if (!homeTeam || !awayTeam) return;
+
+        // Add fixture for home team
+        if (!teamFixtures.has(f.team_h)) {
+          teamFixtures.set(f.team_h, []);
+        }
+        teamFixtures.get(f.team_h)!.push({
+          gw: f.event,
+          difficulty: f.team_h_difficulty,
+          opponent: awayTeam.short_name,
+          isHome: true,
+        });
+
+        // Add fixture for away team
+        if (!teamFixtures.has(f.team_a)) {
+          teamFixtures.set(f.team_a, []);
+        }
+        teamFixtures.get(f.team_a)!.push({
+          gw: f.event,
+          difficulty: f.team_a_difficulty,
+          opponent: homeTeam.short_name,
+          isHome: false,
+        });
+      });
+
+      // Sort fixtures by gameweek and get next 6 for each team
+      const teamFixtureSummary: Array<{ team: Team; fixtures: Array<{ gw: number; difficulty: number; opponent: string; isHome: boolean }>; avgDifficulty: number }> = [];
+      
+      teamFixtures.forEach((fixtures, teamId) => {
+        const team = teamMap.get(teamId);
+        if (!team) return;
+
+        // Sort by gameweek and take next 6
+        const sortedFixtures = fixtures
+          .filter(f => f.gw >= currentGW)
+          .sort((a, b) => a.gw - b.gw)
+          .slice(0, 6);
+
+        if (sortedFixtures.length > 0) {
+          const avgDifficulty = sortedFixtures.reduce((sum, f) => sum + f.difficulty, 0) / sortedFixtures.length;
+          teamFixtureSummary.push({
+            team,
+            fixtures: sortedFixtures,
+            avgDifficulty,
+          });
+        }
+      });
+
+      // Sort by average difficulty (lower is better)
+      teamFixtureSummary.sort((a, b) => a.avgDifficulty - b.avgDifficulty);
+
+        globalContext += `\n\nNext 6 Fixtures by Team (sorted by average difficulty, lower is better):\n`;
+        teamFixtureSummary.slice(0, 20).forEach(({ team, fixtures, avgDifficulty }) => {
+          const fixtureStr = fixtures.map(f => 
+            `GW${f.gw} ${f.isHome ? 'H' : 'A'} vs ${f.opponent} (${f.difficulty})`
+          ).join(', ');
+          globalContext += `${team.short_name} (${team.name}): Avg ${avgDifficulty.toFixed(2)} - ${fixtureStr}\n`;
+        });
+
+        // Also include ALL upcoming fixtures for ALL teams (for comprehensive queries)
+        globalContext += `\n\nALL Upcoming Fixtures by Team (complete list for detailed queries):\n`;
+        teamFixtures.forEach((fixtures, teamId) => {
+          const team = teamMap.get(teamId);
+          if (!team) return;
+
+          const sortedFixtures = fixtures
+            .filter(f => f.gw >= currentGW)
+            .sort((a, b) => a.gw - b.gw);
+
+          if (sortedFixtures.length > 0) {
+            const fixtureStr = sortedFixtures.map(f => 
+              `GW${f.gw} ${f.isHome ? 'H' : 'A'} vs ${f.opponent} (${f.difficulty})`
+            ).join(', ');
+            globalContext += `${team.short_name} (${team.name}): ${fixtureStr}\n`;
+          }
+        });
+      }
+
+      globalContext += '\n=== END GLOBAL FPL DATA ===\n';
+    contextDescription += globalContext;
+  }
+
+  // Add global FPL data context
+  if (globalFPLData) {
+    let globalContext = '\n\n=== GLOBAL FPL DATA (Available for all questions) ===\n';
+    
+    if (globalFPLData.currentGameweek) {
+      globalContext += `Current Gameweek: ${globalFPLData.currentGameweek}\n`;
+    }
+
+    if (globalFPLData.allPlayers && globalFPLData.allPlayers.length > 0) {
+      const topByPosition = {
+        GK: globalFPLData.allPlayers.filter((p: Player) => p.element_type === 1).sort((a, b) => b.total_points - a.total_points).slice(0, 5),
+        DEF: globalFPLData.allPlayers.filter((p: Player) => p.element_type === 2).sort((a, b) => b.total_points - a.total_points).slice(0, 5),
+        MID: globalFPLData.allPlayers.filter((p: Player) => p.element_type === 3).sort((a, b) => b.total_points - a.total_points).slice(0, 5),
+        FWD: globalFPLData.allPlayers.filter((p: Player) => p.element_type === 4).sort((a, b) => b.total_points - a.total_points).slice(0, 5),
+      };
+
+      globalContext += `\nTop Players by Position:\n`;
+      if (topByPosition.GK.length > 0) {
+        globalContext += `GK: ${topByPosition.GK.map((p: Player) => `${p.web_name} (${p.total_points}pts)`).join(', ')}\n`;
+      }
+      if (topByPosition.DEF.length > 0) {
+        globalContext += `DEF: ${topByPosition.DEF.map((p: Player) => `${p.web_name} (${p.total_points}pts)`).join(', ')}\n`;
+      }
+      if (topByPosition.MID.length > 0) {
+        globalContext += `MID: ${topByPosition.MID.map((p: Player) => `${p.web_name} (${p.total_points}pts)`).join(', ')}\n`;
+      }
+      if (topByPosition.FWD.length > 0) {
+        globalContext += `FWD: ${topByPosition.FWD.map((p: Player) => `${p.web_name} (${p.total_points}pts)`).join(', ')}\n`;
+      }
+      globalContext += `\nTotal Players Available: ${globalFPLData.allPlayers.length}\n`;
+    }
+
+    if (globalFPLData.allTeams && globalFPLData.allTeams.length > 0) {
+      globalContext += `\nAll Teams: ${globalFPLData.allTeams.map((t: Team) => `${t.name} (${t.short_name})`).join(', ')}\n`;
+    }
+
+    if (globalFPLData.upcomingFixtures && globalFPLData.upcomingFixtures.length > 0) {
+      const upcoming = globalFPLData.upcomingFixtures.filter((f: Fixture) => !f.finished).slice(0, 10);
+      globalContext += `\nUpcoming Fixtures (next 10):\n`;
+      upcoming.forEach((f: Fixture) => {
+        if (f.event) {
+          globalContext += `GW${f.event}: Team ${f.team_h} vs Team ${f.team_a}\n`;
+        }
+      });
+    }
+
+    globalContext += '\n=== END GLOBAL FPL DATA ===\n';
+    contextDescription += globalContext;
   }
 
   // Build conversation history for OpenAI (uses messages format)

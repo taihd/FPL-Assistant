@@ -88,8 +88,14 @@ src/
 - **Clubs Module**: Browse all Premier League clubs, view upcoming fixtures, compare teams
 - **Players Module**: Search and filter players, compare stats, view detailed player information
 - **Managers Module**: View manager statistics, points history charts, transfer history, chip usage
+- **My Team Module**: Personal team management, player details, position comparison, AI insights
 - **Leagues Module**: (Coming soon)
-- **AI Assistant**: Context-aware AI chat with grounding search that fetches real-time FPL data
+- **AI Assistant**: Context-aware AI chat with comprehensive FPL data access:
+  - All ~600 players with complete stats (price, form, ICT, injuries, etc.)
+  - All fixtures (historical results + upcoming)
+  - All teams with strength ratings
+  - All gameweeks with deadlines
+- **Gameweek Deadline**: Live countdown to next gameweek deadline
 - **Caching**: Automatic localStorage caching for faster page loads
 - **Responsive Design**: Works seamlessly on mobile, tablet, and desktop
 
@@ -102,6 +108,8 @@ src/
 - [x] Phase 5: Managers Module
 - [x] Phase 6: AI Assistant
 - [x] Phase 7: Polish (Caching, Responsiveness, Enhanced Charts)
+- [x] Phase 8: My Team (Team management, player details, comparison, history charts)
+- [x] Phase 9: Enhanced AI Context (Comprehensive FPL data for AI)
 
 ## License
 

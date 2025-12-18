@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAppContext } from '@/context/AppContext';
+import { useFPLData } from '@/context/FPLDataContext';
 import { askFPLAssistant } from '@/services/aiAgent';
 import { LoadingSpinner } from './LoadingSpinner';
 
@@ -11,6 +12,7 @@ interface Message {
 
 export function AIChat() {
   const { screen, dataSnapshot } = useAppContext();
+  const fplData = useFPLData();
   const [question, setQuestion] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
@@ -48,11 +50,21 @@ export function AIChat() {
         content: msg.content,
       }));
 
+      // Prepare global FPL data for AI (use full objects for type compatibility)
+      const globalFPLData = {
+        allPlayers: fplData.allPlayers,
+        allTeams: fplData.allTeams,
+        currentGameweek: fplData.currentGameweek,
+        upcomingFixtures: fplData.fixtures || [],
+        events: fplData.events || [],
+      };
+
       const response = await askFPLAssistant({
         screen,
         dataSnapshot,
         question: userMessage.content,
         conversationHistory,
+        globalFPLData,
       });
 
       const assistantMessage: Message = {

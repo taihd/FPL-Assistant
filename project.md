@@ -26,6 +26,11 @@ The app will include a **context-aware AI assistant** that can understand what p
 
 - Use Google Gemini or OpenAI GPT for the contextual assistant
 - AI Agent understands the "current screen" and related data
+- **Comprehensive Context**: AI has access to ALL FPL data:
+  - All ~600 players with complete stats (price, points, form, ICT, transfers, injuries, etc.)
+  - All 20 teams with strength ratings (attack/defence home/away)
+  - All ~380 fixtures (historical results + upcoming)
+  - All 38 gameweeks (deadlines, average scores, etc.)
 
 ---
 
@@ -82,7 +87,8 @@ src/
 │
 ├── context/
 │   ├── AppContext.tsx
-│   └── TeamContext.tsx
+│   ├── TeamContext.tsx
+│   └── FPLDataContext.tsx
 │
 ├── services/
 │   ├── api.ts
@@ -284,3 +290,22 @@ See `MY_TEAM_PLAN.md` for detailed implementation plan.
 - ✅ Leagues rank (collapsible) - **Completed**
 
 **Status:** All Phases Complete! 🎉 - Full My Team feature implemented with team management, player details, comparison, AI insights, history charts, chips, transfers, and leagues.
+
+## 🤖 Phase 9: Enhanced AI Context
+
+**Key Features:**
+- ✅ Global FPLDataContext for caching all FPL data
+- ✅ Comprehensive player data (all ~30 fields per player)
+- ✅ Complete fixture data (historical + upcoming with scores)
+- ✅ Team strength ratings (attack/defence home/away)
+- ✅ Gameweek information (deadlines, average scores)
+- ✅ Automatic 10-minute refresh of global data
+
+**AI Can Now Answer:**
+- Player queries: "Who are the best value midfielders under £8m?"
+- Fixture queries: "What are Arsenal's next 5 fixtures?"
+- Team queries: "Which team has the best attack?"
+- Gameweek queries: "When is the next deadline?"
+- Comparison queries: "Compare Salah and Son's ICT stats"
+
+See `AI_CONTEXT_REVIEW.md` for full implementation details.

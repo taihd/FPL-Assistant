@@ -29,20 +29,33 @@ interface GroundedData {
 /**
  * Analyzes the question and fetches additional relevant data to ground the AI response
  */
+interface GroundingContextWithData extends GroundingContext {
+  cachedBootstrap?: { elements: Player[]; teams: Team[] } | null | undefined;
+  cachedFixtures?: Fixture[] | null | undefined;
+}
+
 export async function groundSearch({
   question,
   screen,
   dataSnapshot: _dataSnapshot,
-}: GroundingContext): Promise<GroundedData> {
+  cachedBootstrap,
+  cachedFixtures,
+}: GroundingContextWithData): Promise<GroundedData> {
   const questionLower = question.toLowerCase();
   const result: GroundedData = {};
 
   console.log('[Grounding] Starting grounding search for question:', question);
 
   try {
-    // Get bootstrap data for reference
-    const bootstrap = await getBootstrapData();
-    console.log('[Grounding] Bootstrap data loaded');
+    // Use cached bootstrap data if available, otherwise fetch
+    let bootstrap;
+    if (cachedBootstrap) {
+      bootstrap = cachedBootstrap;
+      console.log('[Grounding] Using cached bootstrap data');
+    } else {
+      bootstrap = await getBootstrapData();
+      console.log('[Grounding] Bootstrap data loaded');
+    }
 
     // Extract player names from question
     const playerMatches = extractPlayerNames(questionLower, bootstrap.elements);
@@ -66,9 +79,15 @@ export async function groundSearch({
       questionLower.includes('upcoming') ||
       questionLower.includes('schedule')
     ) {
-      const fixtures = await getFixtures();
-      result.relevantFixtures = fixtures.slice(0, 20); // Limit to 20 fixtures
-      console.log('[Grounding] Loaded fixtures:', result.relevantFixtures.length);
+      // Use cached fixtures if available, otherwise fetch
+      if (cachedFixtures) {
+        result.relevantFixtures = cachedFixtures.slice(0, 20);
+        console.log('[Grounding] Using cached fixtures:', result.relevantFixtures.length);
+      } else {
+        const fixtures = await getFixtures();
+        result.relevantFixtures = fixtures.slice(0, 20); // Limit to 20 fixtures
+        console.log('[Grounding] Loaded fixtures:', result.relevantFixtures.length);
+      }
     }
 
     // Always try to get player summaries if players are mentioned OR if question is about player stats
