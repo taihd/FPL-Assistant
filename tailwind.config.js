@@ -13,23 +13,43 @@ export default {
         sm: 'calc(var(--radius) - 4px)',
       },
       colors: {
-        // Dark theme colors matching the design
+        // Theme-aware colors using CSS variables
+        bg: {
+          primary: 'var(--bg-primary)',
+          secondary: 'var(--bg-secondary)',
+          card: 'var(--bg-card)',
+          hover: 'var(--bg-hover)',
+          accent: 'var(--bg-accent)',
+        },
+        text: {
+          primary: 'var(--text-primary)',
+          secondary: 'var(--text-secondary)',
+          muted: 'var(--text-muted)',
+          inverse: 'var(--text-inverse)',
+        },
+        border: {
+          DEFAULT: 'var(--border-color)',
+          color: 'var(--border-color)',
+          hover: 'var(--border-hover)',
+          accent: 'var(--border-accent)',
+        },
+        // Legacy dark theme colors (for backward compatibility)
         dark: {
-          bg: '#0F0F15', // Main background - deep dark purplish-grey
-          card: '#25252B', // Card/section background - lighter dark grey
-          border: '#2A2A35', // Border color
+          bg: '#0F0F15',
+          card: '#25252B',
+          border: '#2A2A35',
           text: {
-            primary: '#FFFFFF', // Primary text
-            secondary: '#A1A1AA', // Secondary text
-            muted: '#71717A', // Muted text
+            primary: '#FFFFFF',
+            secondary: '#A1A1AA',
+            muted: '#71717A',
           },
         },
         // Position colors
         position: {
-          fwd: '#DC2626', // Muted red for FWD
-          mid: '#F59E0B', // Amber for MID
-          def: '#059669', // Muted green for DEF
-          gkp: '#3B82F6', // Blue for GKP
+          fwd: '#DC2626',
+          mid: '#F59E0B',
+          def: '#059669',
+          gkp: '#3B82F6',
         },
       },
     },

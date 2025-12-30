@@ -24,15 +24,26 @@ export type {
 // The FPL API blocks CORS requests from GitHub Pages, so we need a proxy
 const FPL_API_URL = 'https://fantasy.premierleague.com/api';
 
-// Helper to get the proxied URL for production
+// Helper to get the proxied URL for production with fallback
 const getProxiedUrl = (path: string): string => {
   if (import.meta.env.DEV) {
     return `/api/fpl${path}`;
   }
   
-  // Use corsproxy.io - more reliable than allorigins
+  // Try multiple CORS proxy services with fallback
+  // Primary: corsproxy.io (more reliable)
+  // Fallback: api.allorigins.win (if primary fails)
   const fullUrl = `${FPL_API_URL}${path}`;
+  
+  // Use corsproxy.io as primary
   return `https://corsproxy.io/?${encodeURIComponent(fullUrl)}`;
+};
+
+// Fallback proxy function for retry logic
+const getFallbackProxiedUrl = (path: string): string => {
+  const fullUrl = `${FPL_API_URL}${path}`;
+  // Fallback to allorigins if primary fails
+  return `https://api.allorigins.win/raw?url=${encodeURIComponent(fullUrl)}`;
 };
 
 // Cache TTLs (in milliseconds)
@@ -43,6 +54,43 @@ const CACHE_TTL = {
   PLAYER: 5 * 60 * 1000, // 5 minutes
 } as const;
 
+// Helper function to fetch with retry and fallback proxy
+async function fetchWithFallback(url: string, fallbackUrl: string): Promise<Response> {
+  try {
+    const response = await fetch(url, {
+      method: 'GET',
+      mode: 'cors',
+      credentials: 'omit',
+    });
+    
+    // If primary proxy returns 500 or other server errors, try fallback
+    if (response.status >= 500) {
+      console.warn('Primary proxy failed, trying fallback...');
+      const fallbackResponse = await fetch(fallbackUrl, {
+        method: 'GET',
+        mode: 'cors',
+        credentials: 'omit',
+      });
+      return fallbackResponse;
+    }
+    
+    return response;
+  } catch (error) {
+    // If primary fails completely, try fallback
+    console.warn('Primary proxy error, trying fallback...', error);
+    try {
+      return await fetch(fallbackUrl, {
+        method: 'GET',
+        mode: 'cors',
+        credentials: 'omit',
+      });
+    } catch (fallbackError) {
+      // If both fail, throw the original error
+      throw error;
+    }
+  }
+}
+
 export async function getBootstrapData(): Promise<BootstrapData> {
   // Check cache first
   const cached = getCachedData<BootstrapData>(CACHE_KEYS.BOOTSTRAP);
@@ -51,11 +99,10 @@ export async function getBootstrapData(): Promise<BootstrapData> {
   }
 
   try {
-    const response = await fetch(getProxiedUrl('/bootstrap-static/'), {
-      method: 'GET',
-      mode: 'cors',
-      credentials: 'omit',
-    });
+    const primaryUrl = getProxiedUrl('/bootstrap-static/');
+    const fallbackUrl = getFallbackProxiedUrl('/bootstrap-static/');
+    
+    const response = await fetchWithFallback(primaryUrl, fallbackUrl);
 
     if (!response.ok) {
       throw new Error(
@@ -99,11 +146,10 @@ export async function getFixtures(): Promise<Fixture[]> {
   }
 
   try {
-    const response = await fetch(getProxiedUrl('/fixtures/'), {
-      method: 'GET',
-      mode: 'cors',
-      credentials: 'omit',
-    });
+    const primaryUrl = getProxiedUrl('/fixtures/');
+    const fallbackUrl = getFallbackProxiedUrl('/fixtures/');
+    
+    const response = await fetchWithFallback(primaryUrl, fallbackUrl);
 
     if (!response.ok) {
       throw new Error(
@@ -175,11 +221,11 @@ export async function getManagerInfo(id: number): Promise<ManagerInfo> {
   }
 
   try {
-    const response = await fetch(getProxiedUrl(`/entry/${id}/`), {
-      method: 'GET',
-      mode: 'cors',
-      credentials: 'omit',
-    });
+    const primaryUrl = getProxiedUrl(`/entry/${id}/`);
+    const fallbackUrl = getFallbackProxiedUrl(`/entry/${id}/`);
+    
+    const response = await fetchWithFallback(primaryUrl, fallbackUrl);
+    
     if (!response.ok) {
       throw new Error(`Failed to fetch manager info for id ${id}`);
     }
@@ -308,11 +354,10 @@ export async function getTeamPicks(managerId: number, gameweek: number): Promise
   }
 
   try {
-    const response = await fetch(getProxiedUrl(`/entry/${managerId}/event/${gameweek}/picks/`), {
-      method: 'GET',
-      mode: 'cors',
-      credentials: 'omit',
-    });
+    const primaryUrl = getProxiedUrl(`/entry/${managerId}/event/${gameweek}/picks/`);
+    const fallbackUrl = getFallbackProxiedUrl(`/entry/${managerId}/event/${gameweek}/picks/`);
+    
+    const response = await fetchWithFallback(primaryUrl, fallbackUrl);
 
     if (!response.ok) {
       throw new Error(

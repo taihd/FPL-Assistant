@@ -5,25 +5,48 @@
 @layer base {
   :root {
     --radius: 0.5rem;
+    
+    /* Light theme colors */
+    --bg-primary: #F5F7FA;
+    --bg-secondary: #FFFFFF;
+    --bg-card: #FFFFFF;
+    --bg-hover: #F0F4F8;
+    --bg-accent: #E8F2FF;
+    --text-primary: #1A202C;
+    --text-secondary: #4A5568;
+    --text-muted: #718096;
+    --text-inverse: #FFFFFF;
+    --border-color: #E2E8F0;
+    --border-hover: #CBD5E0;
+    --border-accent: #BEE3F8;
+  }
+
+  .dark {
+    /* Dark theme colors */
+    --bg-primary: #0F0F15;
+    --bg-secondary: #25252B;
+    --bg-card: #25252B;
+    --bg-hover: #2A2A35;
+    --bg-accent: #1E1E24;
+    --text-primary: #FFFFFF;
+    --text-secondary: #A1A1AA;
+    --text-muted: #71717A;
+    --text-inverse: #1A202C;
+    --border-color: #2A2A35;
+    --border-hover: #3A3A45;
+    --border-accent: #4A4A55;
   }
 
   body {
-    @apply bg-[#0F0F15] text-white;
     margin: 0;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
       'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
       sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-  }
-
-  /* Dark theme styles */
-  html.dark body {
-    @apply bg-[#0F0F15] text-white;
-  }
-
-  html:not(.dark) body {
-    @apply bg-slate-50 text-slate-900;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
   }
 }
 
