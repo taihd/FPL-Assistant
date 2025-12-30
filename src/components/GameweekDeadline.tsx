@@ -14,7 +14,7 @@ export function GameweekDeadline({ cooldown = 5 * 60 * 1000 }: GameweekDeadlineP
 
   // Fetch deadline data
   useEffect(() => {
-    let intervalId: NodeJS.Timeout | null = null;
+    let intervalId: number | null = null;
 
     const fetchDeadline = async () => {
       try {

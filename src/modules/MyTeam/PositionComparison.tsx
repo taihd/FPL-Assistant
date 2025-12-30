@@ -7,21 +7,6 @@ import { formatPrice, getPositionName } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { NewsIndicator } from '@/components/NewsIndicator';
 
-const getPositionColor = (positionId: number): string => {
-  switch (positionId) {
-    case 1: // Goalkeeper
-      return 'bg-slate-500/20 text-slate-400 border-slate-500/30';
-    case 2: // Defender
-      return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
-    case 3: // Midfielder
-      return 'bg-violet-500/20 text-violet-400 border-violet-500/30';
-    case 4: // Forward
-      return 'bg-red-500/20 text-red-400 border-red-500/30';
-    default:
-      return 'bg-slate-500/20 text-slate-400 border-slate-500/30';
-  }
-};
-
 interface PositionComparisonProps {
   currentPlayer: Player;
   teams: Team[];
@@ -36,7 +21,6 @@ export function PositionComparison({
   currentPlayer,
   teams,
   allPlayers,
-  positions = [],
   limit = 10,
   selectedForCompare = [],
   onAddToCompare,
@@ -193,7 +177,6 @@ export function PositionComparison({
           <tbody className="divide-y divide-dark-border bg-[#25252B]">
             {topPlayers.map((player, index) => {
               const isCurrentPlayer = player.id === currentPlayer.id;
-              const position = positions.find((p) => p.id === player.element_type);
               return (
                 <tr
                   key={player.id}

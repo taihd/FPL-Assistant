@@ -129,7 +129,7 @@ export function TeamPlayerList({ players }: TeamPlayerListProps) {
               </tr>
             </thead>
             <tbody className="divide-y divide-dark-border bg-[#25252B]">
-              {sortedPlayers.map(({ player, pick, position, isStarter }) => {
+              {sortedPlayers.map(({ player, position, isStarter }) => {
                 const team = teams.find((t) => t.id === player.team);
                 const positionType = positions.find((p) => p.id === player.element_type);
                 const isCaptain = player.id === captainId;

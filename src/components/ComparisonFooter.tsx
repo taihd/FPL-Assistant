@@ -1,5 +1,4 @@
-import { useNavigate } from 'react-router-dom';
-import type { Player, Team, ElementType } from '@/types/fpl';
+import type { Team, ElementType } from '@/types/fpl';
 import { cn } from '@/lib/utils';
 
 interface ComparisonFooterProps {
@@ -39,7 +38,6 @@ export function ComparisonFooter({
   onCompare,
   type = 'players',
   positions = [],
-  teams = [],
 }: ComparisonFooterProps) {
   if (selectedItems.length === 0) return null;
 
