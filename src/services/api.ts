@@ -21,10 +21,17 @@ export type {
 } from '@/types/fpl';
 
 // Use proxy in development, direct URL in production
+// Note: FPL API should support CORS, but if issues persist, we can use a CORS proxy
 const BASE_URL =
   import.meta.env.DEV
     ? '/api/fpl'
     : 'https://fantasy.premierleague.com/api';
+
+// Optional CORS proxy fallback (uncomment if CORS issues persist)
+// const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
+// const BASE_URL = import.meta.env.DEV
+//   ? '/api/fpl'
+//   : `${CORS_PROXY}${encodeURIComponent('https://fantasy.premierleague.com/api')}`;
 
 // Cache TTLs (in milliseconds)
 const CACHE_TTL = {
@@ -44,9 +51,8 @@ export async function getBootstrapData(): Promise<BootstrapData> {
   try {
     const response = await fetch(`${BASE_URL}/bootstrap-static/`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      mode: 'cors',
+      credentials: 'omit',
     });
 
     if (!response.ok) {
@@ -62,7 +68,14 @@ export async function getBootstrapData(): Promise<BootstrapData> {
   } catch (error) {
     console.error('API Error (getBootstrapData):', error);
     
-    if (error instanceof TypeError && error.message.includes('fetch')) {
+    // Check for CORS errors
+    if (error instanceof TypeError) {
+      const errorMessage = error.message.toLowerCase();
+      if (errorMessage.includes('failed to fetch') || errorMessage.includes('networkerror') || errorMessage.includes('cors')) {
+        throw new Error(
+          'CORS error: Unable to connect to FPL API. The API may be blocking requests from this domain. Please check the browser console for more details.'
+        );
+      }
       throw new Error(
         'Network error: Unable to connect to FPL API. Please check your internet connection or try again later.'
       );
@@ -86,9 +99,8 @@ export async function getFixtures(): Promise<Fixture[]> {
   try {
     const response = await fetch(`${BASE_URL}/fixtures/`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      mode: 'cors',
+      credentials: 'omit',
     });
 
     if (!response.ok) {
@@ -104,7 +116,14 @@ export async function getFixtures(): Promise<Fixture[]> {
   } catch (error) {
     console.error('API Error (getFixtures):', error);
     
-    if (error instanceof TypeError && error.message.includes('fetch')) {
+    // Check for CORS errors
+    if (error instanceof TypeError) {
+      const errorMessage = error.message.toLowerCase();
+      if (errorMessage.includes('failed to fetch') || errorMessage.includes('networkerror') || errorMessage.includes('cors')) {
+        throw new Error(
+          'CORS error: Unable to connect to FPL API. The API may be blocking requests from this domain.'
+        );
+      }
       throw new Error(
         'Network error: Unable to connect to FPL API. Please check your internet connection or try again later.'
       );
@@ -130,9 +149,8 @@ export async function getPlayerSummary(id: number): Promise<PlayerSummary> {
   try {
     const response = await fetch(`${BASE_URL}/element-summary/${id}/`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      mode: 'cors',
+      credentials: 'omit',
     });
     if (!response.ok) {
       throw new Error(`Failed to fetch player summary for id ${id}`);
@@ -157,9 +175,8 @@ export async function getManagerInfo(id: number): Promise<ManagerInfo> {
   try {
     const response = await fetch(`${BASE_URL}/entry/${id}/`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      mode: 'cors',
+      credentials: 'omit',
     });
     if (!response.ok) {
       throw new Error(`Failed to fetch manager info for id ${id}`);
@@ -184,9 +201,8 @@ export async function getManagerHistory(id: number): Promise<ManagerHistory> {
   try {
     const response = await fetch(`${BASE_URL}/entry/${id}/history/`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      mode: 'cors',
+      credentials: 'omit',
     });
     if (!response.ok) {
       throw new Error(`Failed to fetch manager history for id ${id}`);
@@ -211,9 +227,8 @@ export async function getManagerTransfers(id: number): Promise<ManagerTransfer[]
   try {
     const response = await fetch(`${BASE_URL}/entry/${id}/transfers/`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      mode: 'cors',
+      credentials: 'omit',
     });
     if (!response.ok) {
       throw new Error(`Failed to fetch manager transfers for id ${id}`);
@@ -230,7 +245,11 @@ export async function getManagerTransfers(id: number): Promise<ManagerTransfer[]
 
 export async function getLeagueStandings(id: number): Promise<unknown> {
   try {
-    const response = await fetch(`${BASE_URL}/leagues-classic/${id}/standings/`);
+    const response = await fetch(`${BASE_URL}/leagues-classic/${id}/standings/`, {
+      method: 'GET',
+      mode: 'cors',
+      credentials: 'omit',
+    });
     if (!response.ok) {
       throw new Error(`Failed to fetch league standings for id ${id}`);
     }
@@ -289,9 +308,8 @@ export async function getTeamPicks(managerId: number, gameweek: number): Promise
   try {
     const response = await fetch(`${BASE_URL}/entry/${managerId}/event/${gameweek}/picks/`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      mode: 'cors',
+      credentials: 'omit',
     });
 
     if (!response.ok) {
@@ -307,7 +325,14 @@ export async function getTeamPicks(managerId: number, gameweek: number): Promise
   } catch (error) {
     console.error('API Error (getTeamPicks):', error);
 
-    if (error instanceof TypeError && error.message.includes('fetch')) {
+    // Check for CORS errors
+    if (error instanceof TypeError) {
+      const errorMessage = error.message.toLowerCase();
+      if (errorMessage.includes('failed to fetch') || errorMessage.includes('networkerror') || errorMessage.includes('cors')) {
+        throw new Error(
+          'CORS error: Unable to connect to FPL API. The API may be blocking requests from this domain.'
+        );
+      }
       throw new Error(
         'Network error: Unable to connect to FPL API. Please check your internet connection or try again later.'
       );
