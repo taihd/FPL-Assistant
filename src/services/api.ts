@@ -24,16 +24,15 @@ export type {
 // The FPL API blocks CORS requests from GitHub Pages, so we need a proxy
 const FPL_API_URL = 'https://fantasy.premierleague.com/api';
 
-// Simple helper: use Vite proxy in dev, AllOrigins proxy in production
-// Encode the FULL URL (base + path) for AllOrigins to work correctly
+// Simple helper: use Vite proxy in dev, corsproxy.io in production (this used to work)
 const getApiUrl = (path: string): string => {
   if (import.meta.env.DEV) {
     return `/api/fpl${path}`;
   }
   
-  // Production: encode the full URL including path
+  // Production: use corsproxy.io (format that used to work)
   const fullUrl = `${FPL_API_URL}${path}`;
-  return `https://api.allorigins.win/raw?url=${encodeURIComponent(fullUrl)}`;
+  return `https://corsproxy.io/?${encodeURIComponent(fullUrl)}`;
 };
 
 // Cache TTLs (in milliseconds)
@@ -55,11 +54,11 @@ async function fetchApi(path: string): Promise<Response> {
       credentials: 'omit',
     });
     
-    // If AllOrigins returns 403, try alternative proxy
-    if (response.status === 403 && !import.meta.env.DEV) {
-      console.warn('AllOrigins returned 403, trying alternative proxy...');
+    // If corsproxy.io returns 403/408/500+, try AllOrigins as fallback
+    if ((response.status === 403 || response.status === 408 || response.status >= 500) && !import.meta.env.DEV) {
+      console.warn(`corsproxy.io returned ${response.status}, trying AllOrigins fallback...`);
       const fullUrl = `${FPL_API_URL}${path}`;
-      const altUrl = `https://corsproxy.io/?${encodeURIComponent(fullUrl)}`;
+      const altUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(fullUrl)}`;
       
       const altResponse = await fetch(altUrl, {
         method: 'GET',
@@ -84,11 +83,11 @@ async function fetchApi(path: string): Promise<Response> {
     
     return response;
   } catch (error) {
-    // If fetch fails completely, try alternative proxy in production
+    // If fetch fails completely (network error), try AllOrigins fallback in production
     if (!import.meta.env.DEV && error instanceof TypeError) {
-      console.warn('Primary proxy failed, trying alternative...');
+      console.warn('Primary proxy failed, trying AllOrigins fallback...');
       const fullUrl = `${FPL_API_URL}${path}`;
-      const altUrl = `https://corsproxy.io/?${encodeURIComponent(fullUrl)}`;
+      const altUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(fullUrl)}`;
       
       try {
         const altResponse = await fetch(altUrl, {
