@@ -41,7 +41,7 @@ export function MyTeamPage() {
     teamPicks,
     isLoading,
     error,
-    refreshTeam,
+    clearTeam,
   } = useTeamContext();
   const { setScreen, setDataSnapshot } = useAppContext();
 
@@ -148,20 +148,24 @@ export function MyTeamPage() {
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-white">My Team</h1>
+        <h1 className="text-3xl font-bold text-text-primary">My Team</h1>
         <div className="flex gap-2">
           <button
             onClick={() => navigate('/my-team/planner')}
-            className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700"
+            className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-text-inverse transition-colors hover:bg-emerald-700"
           >
             Fixture Planner
           </button>
           <button
-            onClick={refreshTeam}
-            disabled={isLoading}
-            className="rounded-md bg-violet-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-violet-600 disabled:cursor-not-allowed disabled:opacity-50"
+            onClick={() => {
+              if (confirm('Are you sure you want to log out? This will clear your saved team.')) {
+                clearTeam();
+              }
+            }}
+            className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-text-inverse transition-colors hover:bg-red-700"
+            title="Log out and clear saved team"
           >
-            {isLoading ? 'Refreshing...' : 'Refresh Team'}
+            Log Out
           </button>
         </div>
       </div>
