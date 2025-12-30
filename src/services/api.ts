@@ -25,13 +25,13 @@ export type {
 const FPL_API_URL = 'https://fantasy.premierleague.com/api';
 
 // Simple helper: use Vite proxy in dev, AllOrigins proxy in production
-// AllOrigins has been the most reliable and was working before
+// Encode the FULL URL (base + path) for AllOrigins to work correctly
 const getApiUrl = (path: string): string => {
   if (import.meta.env.DEV) {
     return `/api/fpl${path}`;
   }
   
-  // Production: use AllOrigins proxy (was working before)
+  // Production: encode the full URL including path
   const fullUrl = `${FPL_API_URL}${path}`;
   return `https://api.allorigins.win/raw?url=${encodeURIComponent(fullUrl)}`;
 };
@@ -44,28 +44,69 @@ const CACHE_TTL = {
   PLAYER: 5 * 60 * 1000, // 5 minutes
 } as const;
 
-// Simple fetch function with error handling
+// Simple fetch function with error handling and fallback
 async function fetchApi(path: string): Promise<Response> {
   const url = getApiUrl(path);
   
-  const response = await fetch(url, {
-    method: 'GET',
-    mode: 'cors',
-    credentials: 'omit',
-  });
-  
-  // Check if response is HTML (error page) instead of JSON
-  const contentType = response.headers.get('content-type') || '';
-  if (contentType.includes('text/html')) {
-    // Got HTML instead of JSON - likely an error page from proxy
-    throw new Error(`Proxy returned HTML instead of JSON. Status: ${response.status}. This usually means the proxy is blocking the request.`);
+  try {
+    const response = await fetch(url, {
+      method: 'GET',
+      mode: 'cors',
+      credentials: 'omit',
+    });
+    
+    // If AllOrigins returns 403, try alternative proxy
+    if (response.status === 403 && !import.meta.env.DEV) {
+      console.warn('AllOrigins returned 403, trying alternative proxy...');
+      const fullUrl = `${FPL_API_URL}${path}`;
+      const altUrl = `https://corsproxy.io/?${encodeURIComponent(fullUrl)}`;
+      
+      const altResponse = await fetch(altUrl, {
+        method: 'GET',
+        mode: 'cors',
+        credentials: 'omit',
+      });
+      
+      if (altResponse.ok) {
+        return altResponse;
+      }
+    }
+    
+    // Check if response is HTML (error page) instead of JSON
+    const contentType = response.headers.get('content-type') || '';
+    if (contentType.includes('text/html')) {
+      throw new Error(`Proxy returned HTML instead of JSON. Status: ${response.status}`);
+    }
+    
+    if (!response.ok) {
+      throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+    }
+    
+    return response;
+  } catch (error) {
+    // If fetch fails completely, try alternative proxy in production
+    if (!import.meta.env.DEV && error instanceof TypeError) {
+      console.warn('Primary proxy failed, trying alternative...');
+      const fullUrl = `${FPL_API_URL}${path}`;
+      const altUrl = `https://corsproxy.io/?${encodeURIComponent(fullUrl)}`;
+      
+      try {
+        const altResponse = await fetch(altUrl, {
+          method: 'GET',
+          mode: 'cors',
+          credentials: 'omit',
+        });
+        
+        if (altResponse.ok) {
+          return altResponse;
+        }
+      } catch (altError) {
+        // Both failed, throw original error
+      }
+    }
+    
+    throw error;
   }
-  
-  if (!response.ok) {
-    throw new Error(`API request failed: ${response.status} ${response.statusText}`);
-  }
-  
-  return response;
 }
 
 export async function getBootstrapData(): Promise<BootstrapData> {
