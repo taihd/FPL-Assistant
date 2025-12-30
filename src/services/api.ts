@@ -22,12 +22,18 @@ export type {
 
 // Use proxy in development, CORS proxy in production (GitHub Pages)
 // The FPL API blocks CORS requests from GitHub Pages, so we need a proxy
-const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
 const FPL_API_URL = 'https://fantasy.premierleague.com/api';
 
-const BASE_URL = import.meta.env.DEV
-  ? '/api/fpl'
-  : `${CORS_PROXY}${encodeURIComponent(FPL_API_URL)}`;
+// Helper to get the proxied URL for production
+const getProxiedUrl = (path: string): string => {
+  if (import.meta.env.DEV) {
+    return `/api/fpl${path}`;
+  }
+  
+  // Use corsproxy.io - more reliable than allorigins
+  const fullUrl = `${FPL_API_URL}${path}`;
+  return `https://corsproxy.io/?${encodeURIComponent(fullUrl)}`;
+};
 
 // Cache TTLs (in milliseconds)
 const CACHE_TTL = {
@@ -45,7 +51,7 @@ export async function getBootstrapData(): Promise<BootstrapData> {
   }
 
   try {
-    const response = await fetch(`${BASE_URL}/bootstrap-static/`, {
+    const response = await fetch(getProxiedUrl('/bootstrap-static/'), {
       method: 'GET',
       mode: 'cors',
       credentials: 'omit',
@@ -93,7 +99,7 @@ export async function getFixtures(): Promise<Fixture[]> {
   }
 
   try {
-    const response = await fetch(`${BASE_URL}/fixtures/`, {
+    const response = await fetch(getProxiedUrl('/fixtures/'), {
       method: 'GET',
       mode: 'cors',
       credentials: 'omit',
@@ -143,7 +149,7 @@ export async function getPlayerSummary(id: number): Promise<PlayerSummary> {
   }
 
   try {
-    const response = await fetch(`${BASE_URL}/element-summary/${id}/`, {
+    const response = await fetch(getProxiedUrl(`/element-summary/${id}/`), {
       method: 'GET',
       mode: 'cors',
       credentials: 'omit',
@@ -169,7 +175,7 @@ export async function getManagerInfo(id: number): Promise<ManagerInfo> {
   }
 
   try {
-    const response = await fetch(`${BASE_URL}/entry/${id}/`, {
+    const response = await fetch(getProxiedUrl(`/entry/${id}/`), {
       method: 'GET',
       mode: 'cors',
       credentials: 'omit',
@@ -195,7 +201,7 @@ export async function getManagerHistory(id: number): Promise<ManagerHistory> {
   }
 
   try {
-    const response = await fetch(`${BASE_URL}/entry/${id}/history/`, {
+    const response = await fetch(getProxiedUrl(`/entry/${id}/history/`), {
       method: 'GET',
       mode: 'cors',
       credentials: 'omit',
@@ -221,7 +227,7 @@ export async function getManagerTransfers(id: number): Promise<ManagerTransfer[]
   }
 
   try {
-    const response = await fetch(`${BASE_URL}/entry/${id}/transfers/`, {
+    const response = await fetch(getProxiedUrl(`/entry/${id}/transfers/`), {
       method: 'GET',
       mode: 'cors',
       credentials: 'omit',
@@ -241,7 +247,7 @@ export async function getManagerTransfers(id: number): Promise<ManagerTransfer[]
 
 export async function getLeagueStandings(id: number): Promise<unknown> {
   try {
-    const response = await fetch(`${BASE_URL}/leagues-classic/${id}/standings/`, {
+    const response = await fetch(getProxiedUrl(`/leagues-classic/${id}/standings/`), {
       method: 'GET',
       mode: 'cors',
       credentials: 'omit',
@@ -302,7 +308,7 @@ export async function getTeamPicks(managerId: number, gameweek: number): Promise
   }
 
   try {
-    const response = await fetch(`${BASE_URL}/entry/${managerId}/event/${gameweek}/picks/`, {
+    const response = await fetch(getProxiedUrl(`/entry/${managerId}/event/${gameweek}/picks/`), {
       method: 'GET',
       mode: 'cors',
       credentials: 'omit',
