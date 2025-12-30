@@ -20,18 +20,14 @@ export type {
   ManagerTransfer,
 } from '@/types/fpl';
 
-// Use proxy in development, direct URL in production
-// Note: FPL API should support CORS, but if issues persist, we can use a CORS proxy
-const BASE_URL =
-  import.meta.env.DEV
-    ? '/api/fpl'
-    : 'https://fantasy.premierleague.com/api';
+// Use proxy in development, CORS proxy in production (GitHub Pages)
+// The FPL API blocks CORS requests from GitHub Pages, so we need a proxy
+const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
+const FPL_API_URL = 'https://fantasy.premierleague.com/api';
 
-// Optional CORS proxy fallback (uncomment if CORS issues persist)
-// const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
-// const BASE_URL = import.meta.env.DEV
-//   ? '/api/fpl'
-//   : `${CORS_PROXY}${encodeURIComponent('https://fantasy.premierleague.com/api')}`;
+const BASE_URL = import.meta.env.DEV
+  ? '/api/fpl'
+  : `${CORS_PROXY}${encodeURIComponent(FPL_API_URL)}`;
 
 // Cache TTLs (in milliseconds)
 const CACHE_TTL = {
