@@ -111,6 +111,46 @@ src/
 - [x] Phase 8: My Team (Team management, player details, comparison, history charts)
 - [x] Phase 9: Enhanced AI Context (Comprehensive FPL data for AI)
 
+## Deployment
+
+### GitHub Pages
+
+This project is configured for automatic deployment to GitHub Pages using GitHub Actions.
+
+#### Setup Instructions:
+
+1. **Enable GitHub Pages in your repository:**
+   - Go to your repository Settings → Pages
+   - Under "Source", select "GitHub Actions"
+
+2. **Add GitHub Secrets:**
+   - Go to Settings → Secrets and variables → Actions
+   - Add the following secrets:
+     - `VITE_GEMINI_API_KEY` (your Gemini API key)
+     - OR `VITE_OPENAI_API_KEY` (your OpenAI API key)
+     - Optionally: `VITE_GEMINI_MODEL`, `VITE_ENABLE_GROUNDING`
+
+3. **Push to trigger deployment:**
+   ```bash
+   git push origin master  # or 'main' if that's your default branch
+   ```
+
+4. **Access your deployed app:**
+   - Your app will be available at: `https://[username].github.io/[repository-name]/`
+   - The workflow automatically builds and deploys on every push to the master branch
+
+#### Manual Deployment:
+
+If you prefer to deploy manually:
+
+```bash
+# Build for production
+npm run build
+
+# The dist/ folder contains the production build
+# Upload the contents to your hosting provider
+```
+
 ## License
 
 ISC

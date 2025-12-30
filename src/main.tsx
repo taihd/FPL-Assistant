@@ -9,9 +9,16 @@ if (!document.documentElement.classList.contains('dark') && !document.documentEl
   document.documentElement.classList.add('dark');
 }
 
+// Get base path for GitHub Pages
+// Vite automatically sets import.meta.env.BASE_URL based on vite.config.ts base option
+// For GitHub Pages project sites, this will be '/repository-name/'
+// For user/organization sites, this will be '/'
+const basePath = import.meta.env.BASE_URL;
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <BrowserRouter
+      basename={basePath}
       future={{
         v7_startTransition: true,
         v7_relativeSplatPath: true,
