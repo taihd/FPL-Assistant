@@ -42,6 +42,10 @@ jobs:
           VITE_ENABLE_GROUNDING: ${{ secrets.VITE_ENABLE_GROUNDING }}
         run: npm run build
 
+      - name: Add .nojekyll file
+        # Prevents GitHub Pages from processing the site with Jekyll
+        run: touch ./dist/.nojekyll
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
