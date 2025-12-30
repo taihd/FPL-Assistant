@@ -25,25 +25,23 @@ export type {
 const FPL_API_URL = 'https://fantasy.premierleague.com/api';
 
 // Helper to get the proxied URL for production with fallback
-const getProxiedUrl = (path: string): string => {
+// Try direct access first (may work in some browsers), then fall back to proxies
+const getProxiedUrl = (path: string, proxyIndex = 0): string => {
   if (import.meta.env.DEV) {
     return `/api/fpl${path}`;
   }
   
-  // Try multiple CORS proxy services with fallback
-  // Primary: corsproxy.io (more reliable)
-  // Fallback: api.allorigins.win (if primary fails)
   const fullUrl = `${FPL_API_URL}${path}`;
   
-  // Use corsproxy.io as primary
-  return `https://corsproxy.io/?${encodeURIComponent(fullUrl)}`;
-};
-
-// Fallback proxy function for retry logic
-const getFallbackProxiedUrl = (path: string): string => {
-  const fullUrl = `${FPL_API_URL}${path}`;
-  // Fallback to allorigins if primary fails
-  return `https://api.allorigins.win/raw?url=${encodeURIComponent(fullUrl)}`;
+  // Try direct access first (index 0), then fall back to proxies
+  const options = [
+    fullUrl, // Direct access - try first (may work in some browsers)
+    `https://api.allorigins.win/raw?url=${encodeURIComponent(fullUrl)}`, // AllOrigins
+    `https://corsproxy.io/?${encodeURIComponent(fullUrl)}`, // CorsProxy.io
+    `https://cors.sh/?${encodeURIComponent(fullUrl)}`, // CORS.SH
+  ];
+  
+  return options[proxyIndex] || options[0];
 };
 
 // Cache TTLs (in milliseconds)
@@ -54,41 +52,83 @@ const CACHE_TTL = {
   PLAYER: 5 * 60 * 1000, // 5 minutes
 } as const;
 
-// Helper function to fetch with retry and fallback proxy
-async function fetchWithFallback(url: string, fallbackUrl: string): Promise<Response> {
-  try {
-    const response = await fetch(url, {
-      method: 'GET',
-      mode: 'cors',
-      credentials: 'omit',
-    });
-    
-    // If primary proxy returns 500 or other server errors, try fallback
-    if (response.status >= 500) {
-      console.warn('Primary proxy failed, trying fallback...');
-      const fallbackResponse = await fetch(fallbackUrl, {
-        method: 'GET',
-        mode: 'cors',
-        credentials: 'omit',
-      });
-      return fallbackResponse;
-    }
-    
-    return response;
-  } catch (error) {
-    // If primary fails completely, try fallback
-    console.warn('Primary proxy error, trying fallback...', error);
+// Helper function to fetch with direct access first, then proxy fallbacks
+async function fetchWithFallback(path: string): Promise<Response> {
+  const options = [
+    { name: 'Direct API', url: getProxiedUrl(path, 0), isDirect: true },
+    { name: 'AllOrigins', url: getProxiedUrl(path, 1), isDirect: false },
+    { name: 'CorsProxy.io', url: getProxiedUrl(path, 2), isDirect: false },
+    { name: 'CORS.SH', url: getProxiedUrl(path, 3), isDirect: false },
+  ];
+  
+  let lastError: Error | null = null;
+  let lastResponse: Response | null = null;
+  
+  for (const option of options) {
     try {
-      return await fetch(fallbackUrl, {
+      const response = await fetch(option.url, {
         method: 'GET',
         mode: 'cors',
         credentials: 'omit',
       });
-    } catch (fallbackError) {
-      // If both fail, throw the original error
-      throw error;
+      
+      // For direct API access, if we get a valid response, it worked!
+      if (option.isDirect && response.ok) {
+        return response;
+      }
+      
+      // For direct API, if we get a non-ok response, it might be rate limiting
+      // But still try proxies as fallback
+      if (option.isDirect) {
+        lastResponse = response;
+        continue;
+      }
+      
+      // For proxy services, check status codes
+      if (response.status === 403 || response.status >= 500) {
+        console.warn(`${option.name} returned ${response.status}, trying next option...`);
+        continue;
+      }
+      
+      // Success - return the response
+      if (response.ok) {
+        return response;
+      }
+      
+      // For other non-ok statuses, still try next option
+      console.warn(`${option.name} returned ${response.status}, trying next option...`);
+      lastResponse = response;
+      continue;
+    } catch (error) {
+      // Check if it's a CORS error (TypeError with specific message)
+      if (error instanceof TypeError) {
+        const errorMessage = error.message.toLowerCase();
+        if (errorMessage.includes('failed to fetch') || errorMessage.includes('networkerror') || errorMessage.includes('cors')) {
+          // CORS error - try next option (proxy)
+          if (option.isDirect) {
+            console.warn('Direct API access blocked by CORS, trying proxy...');
+          } else {
+            console.warn(`${option.name} failed, trying next option...`);
+          }
+          lastError = error;
+          continue;
+        }
+      }
+      
+      console.warn(`${option.name} failed:`, error);
+      lastError = error instanceof Error ? error : new Error(String(error));
+      // Continue to next option
+      continue;
     }
   }
+  
+  // All options failed - if we got a response, throw with that status
+  if (lastResponse) {
+    throw new Error(`All options failed. Last response: ${lastResponse.status} ${lastResponse.statusText}`);
+  }
+  
+  // All options failed with errors
+  throw lastError || new Error('All API access methods failed');
 }
 
 export async function getBootstrapData(): Promise<BootstrapData> {
@@ -99,10 +139,7 @@ export async function getBootstrapData(): Promise<BootstrapData> {
   }
 
   try {
-    const primaryUrl = getProxiedUrl('/bootstrap-static/');
-    const fallbackUrl = getFallbackProxiedUrl('/bootstrap-static/');
-    
-    const response = await fetchWithFallback(primaryUrl, fallbackUrl);
+    const response = await fetchWithFallback('/bootstrap-static/');
 
     if (!response.ok) {
       throw new Error(
@@ -146,10 +183,7 @@ export async function getFixtures(): Promise<Fixture[]> {
   }
 
   try {
-    const primaryUrl = getProxiedUrl('/fixtures/');
-    const fallbackUrl = getFallbackProxiedUrl('/fixtures/');
-    
-    const response = await fetchWithFallback(primaryUrl, fallbackUrl);
+    const response = await fetchWithFallback('/fixtures/');
 
     if (!response.ok) {
       throw new Error(
@@ -195,11 +229,7 @@ export async function getPlayerSummary(id: number): Promise<PlayerSummary> {
   }
 
   try {
-    const response = await fetch(getProxiedUrl(`/element-summary/${id}/`), {
-      method: 'GET',
-      mode: 'cors',
-      credentials: 'omit',
-    });
+    const response = await fetchWithFallback(`/element-summary/${id}/`);
     if (!response.ok) {
       throw new Error(`Failed to fetch player summary for id ${id}`);
     }
@@ -221,10 +251,7 @@ export async function getManagerInfo(id: number): Promise<ManagerInfo> {
   }
 
   try {
-    const primaryUrl = getProxiedUrl(`/entry/${id}/`);
-    const fallbackUrl = getFallbackProxiedUrl(`/entry/${id}/`);
-    
-    const response = await fetchWithFallback(primaryUrl, fallbackUrl);
+    const response = await fetchWithFallback(`/entry/${id}/`);
     
     if (!response.ok) {
       throw new Error(`Failed to fetch manager info for id ${id}`);
@@ -247,11 +274,7 @@ export async function getManagerHistory(id: number): Promise<ManagerHistory> {
   }
 
   try {
-    const response = await fetch(getProxiedUrl(`/entry/${id}/history/`), {
-      method: 'GET',
-      mode: 'cors',
-      credentials: 'omit',
-    });
+    const response = await fetchWithFallback(`/entry/${id}/history/`);
     if (!response.ok) {
       throw new Error(`Failed to fetch manager history for id ${id}`);
     }
@@ -273,11 +296,7 @@ export async function getManagerTransfers(id: number): Promise<ManagerTransfer[]
   }
 
   try {
-    const response = await fetch(getProxiedUrl(`/entry/${id}/transfers/`), {
-      method: 'GET',
-      mode: 'cors',
-      credentials: 'omit',
-    });
+    const response = await fetchWithFallback(`/entry/${id}/transfers/`);
     if (!response.ok) {
       throw new Error(`Failed to fetch manager transfers for id ${id}`);
     }
@@ -293,11 +312,7 @@ export async function getManagerTransfers(id: number): Promise<ManagerTransfer[]
 
 export async function getLeagueStandings(id: number): Promise<unknown> {
   try {
-    const response = await fetch(getProxiedUrl(`/leagues-classic/${id}/standings/`), {
-      method: 'GET',
-      mode: 'cors',
-      credentials: 'omit',
-    });
+    const response = await fetchWithFallback(`/leagues-classic/${id}/standings/`);
     if (!response.ok) {
       throw new Error(`Failed to fetch league standings for id ${id}`);
     }
@@ -354,10 +369,7 @@ export async function getTeamPicks(managerId: number, gameweek: number): Promise
   }
 
   try {
-    const primaryUrl = getProxiedUrl(`/entry/${managerId}/event/${gameweek}/picks/`);
-    const fallbackUrl = getFallbackProxiedUrl(`/entry/${managerId}/event/${gameweek}/picks/`);
-    
-    const response = await fetchWithFallback(primaryUrl, fallbackUrl);
+    const response = await fetchWithFallback(`/entry/${managerId}/event/${gameweek}/picks/`);
 
     if (!response.ok) {
       throw new Error(
