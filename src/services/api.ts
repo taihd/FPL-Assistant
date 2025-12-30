@@ -24,24 +24,16 @@ export type {
 // The FPL API blocks CORS requests from GitHub Pages, so we need a proxy
 const FPL_API_URL = 'https://fantasy.premierleague.com/api';
 
-// Helper to get the proxied URL for production with fallback
-// Try direct access first (may work in some browsers), then fall back to proxies
-const getProxiedUrl = (path: string, proxyIndex = 0): string => {
+// Simple helper: use Vite proxy in dev, AllOrigins proxy in production
+// AllOrigins has been the most reliable and was working before
+const getApiUrl = (path: string): string => {
   if (import.meta.env.DEV) {
     return `/api/fpl${path}`;
   }
   
+  // Production: use AllOrigins proxy (was working before)
   const fullUrl = `${FPL_API_URL}${path}`;
-  
-  // Try direct access first (index 0), then fall back to proxies
-  const options = [
-    fullUrl, // Direct access - try first (may work in some browsers)
-    `https://api.allorigins.win/raw?url=${encodeURIComponent(fullUrl)}`, // AllOrigins
-    `https://corsproxy.io/?${encodeURIComponent(fullUrl)}`, // CorsProxy.io
-    `https://cors.sh/?${encodeURIComponent(fullUrl)}`, // CORS.SH
-  ];
-  
-  return options[proxyIndex] || options[0];
+  return `https://api.allorigins.win/raw?url=${encodeURIComponent(fullUrl)}`;
 };
 
 // Cache TTLs (in milliseconds)
@@ -52,83 +44,28 @@ const CACHE_TTL = {
   PLAYER: 5 * 60 * 1000, // 5 minutes
 } as const;
 
-// Helper function to fetch with direct access first, then proxy fallbacks
-async function fetchWithFallback(path: string): Promise<Response> {
-  const options = [
-    { name: 'Direct API', url: getProxiedUrl(path, 0), isDirect: true },
-    { name: 'AllOrigins', url: getProxiedUrl(path, 1), isDirect: false },
-    { name: 'CorsProxy.io', url: getProxiedUrl(path, 2), isDirect: false },
-    { name: 'CORS.SH', url: getProxiedUrl(path, 3), isDirect: false },
-  ];
+// Simple fetch function with error handling
+async function fetchApi(path: string): Promise<Response> {
+  const url = getApiUrl(path);
   
-  let lastError: Error | null = null;
-  let lastResponse: Response | null = null;
+  const response = await fetch(url, {
+    method: 'GET',
+    mode: 'cors',
+    credentials: 'omit',
+  });
   
-  for (const option of options) {
-    try {
-      const response = await fetch(option.url, {
-        method: 'GET',
-        mode: 'cors',
-        credentials: 'omit',
-      });
-      
-      // For direct API access, if we get a valid response, it worked!
-      if (option.isDirect && response.ok) {
-        return response;
-      }
-      
-      // For direct API, if we get a non-ok response, it might be rate limiting
-      // But still try proxies as fallback
-      if (option.isDirect) {
-        lastResponse = response;
-        continue;
-      }
-      
-      // For proxy services, check status codes
-      if (response.status === 403 || response.status >= 500) {
-        console.warn(`${option.name} returned ${response.status}, trying next option...`);
-        continue;
-      }
-      
-      // Success - return the response
-      if (response.ok) {
-        return response;
-      }
-      
-      // For other non-ok statuses, still try next option
-      console.warn(`${option.name} returned ${response.status}, trying next option...`);
-      lastResponse = response;
-      continue;
-    } catch (error) {
-      // Check if it's a CORS error (TypeError with specific message)
-      if (error instanceof TypeError) {
-        const errorMessage = error.message.toLowerCase();
-        if (errorMessage.includes('failed to fetch') || errorMessage.includes('networkerror') || errorMessage.includes('cors')) {
-          // CORS error - try next option (proxy)
-          if (option.isDirect) {
-            console.warn('Direct API access blocked by CORS, trying proxy...');
-          } else {
-            console.warn(`${option.name} failed, trying next option...`);
-          }
-          lastError = error;
-          continue;
-        }
-      }
-      
-      console.warn(`${option.name} failed:`, error);
-      lastError = error instanceof Error ? error : new Error(String(error));
-      // Continue to next option
-      continue;
-    }
+  // Check if response is HTML (error page) instead of JSON
+  const contentType = response.headers.get('content-type') || '';
+  if (contentType.includes('text/html')) {
+    // Got HTML instead of JSON - likely an error page from proxy
+    throw new Error(`Proxy returned HTML instead of JSON. Status: ${response.status}. This usually means the proxy is blocking the request.`);
   }
   
-  // All options failed - if we got a response, throw with that status
-  if (lastResponse) {
-    throw new Error(`All options failed. Last response: ${lastResponse.status} ${lastResponse.statusText}`);
+  if (!response.ok) {
+    throw new Error(`API request failed: ${response.status} ${response.statusText}`);
   }
   
-  // All options failed with errors
-  throw lastError || new Error('All API access methods failed');
+  return response;
 }
 
 export async function getBootstrapData(): Promise<BootstrapData> {
@@ -139,14 +76,7 @@ export async function getBootstrapData(): Promise<BootstrapData> {
   }
 
   try {
-    const response = await fetchWithFallback('/bootstrap-static/');
-
-    if (!response.ok) {
-      throw new Error(
-        `Failed to fetch bootstrap data: ${response.status} ${response.statusText}`
-      );
-    }
-
+    const response = await fetchApi('/bootstrap-static/');
     const data = await response.json() as BootstrapData;
     // Cache the data
     setCachedData(CACHE_KEYS.BOOTSTRAP, data, CACHE_TTL.BOOTSTRAP);
@@ -183,14 +113,7 @@ export async function getFixtures(): Promise<Fixture[]> {
   }
 
   try {
-    const response = await fetchWithFallback('/fixtures/');
-
-    if (!response.ok) {
-      throw new Error(
-        `Failed to fetch fixtures: ${response.status} ${response.statusText}`
-      );
-    }
-
+    const response = await fetchApi('/fixtures/');
     const data = await response.json() as Fixture[];
     // Cache the data
     setCachedData(CACHE_KEYS.FIXTURES, data, CACHE_TTL.FIXTURES);
@@ -229,10 +152,7 @@ export async function getPlayerSummary(id: number): Promise<PlayerSummary> {
   }
 
   try {
-    const response = await fetchWithFallback(`/element-summary/${id}/`);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch player summary for id ${id}`);
-    }
+    const response = await fetchApi(`/element-summary/${id}/`);
     const data = await response.json() as PlayerSummary;
     // Cache the data
     setCachedData(CACHE_KEYS.PLAYER_SUMMARY(id), data, CACHE_TTL.PLAYER);
@@ -251,11 +171,7 @@ export async function getManagerInfo(id: number): Promise<ManagerInfo> {
   }
 
   try {
-    const response = await fetchWithFallback(`/entry/${id}/`);
-    
-    if (!response.ok) {
-      throw new Error(`Failed to fetch manager info for id ${id}`);
-    }
+    const response = await fetchApi(`/entry/${id}/`);
     const data = await response.json() as ManagerInfo;
     // Cache the data
     setCachedData(CACHE_KEYS.MANAGER_INFO(id), data, CACHE_TTL.MANAGER);
@@ -274,10 +190,7 @@ export async function getManagerHistory(id: number): Promise<ManagerHistory> {
   }
 
   try {
-    const response = await fetchWithFallback(`/entry/${id}/history/`);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch manager history for id ${id}`);
-    }
+    const response = await fetchApi(`/entry/${id}/history/`);
     const data = await response.json() as ManagerHistory;
     // Cache the data
     setCachedData(CACHE_KEYS.MANAGER_HISTORY(id), data, CACHE_TTL.MANAGER);
@@ -296,10 +209,7 @@ export async function getManagerTransfers(id: number): Promise<ManagerTransfer[]
   }
 
   try {
-    const response = await fetchWithFallback(`/entry/${id}/transfers/`);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch manager transfers for id ${id}`);
-    }
+    const response = await fetchApi(`/entry/${id}/transfers/`);
     const data = await response.json() as ManagerTransfer[];
     // Cache the data
     setCachedData(CACHE_KEYS.MANAGER_TRANSFERS(id), data, CACHE_TTL.MANAGER);
@@ -312,10 +222,7 @@ export async function getManagerTransfers(id: number): Promise<ManagerTransfer[]
 
 export async function getLeagueStandings(id: number): Promise<unknown> {
   try {
-    const response = await fetchWithFallback(`/leagues-classic/${id}/standings/`);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch league standings for id ${id}`);
-    }
+    const response = await fetchApi(`/leagues-classic/${id}/standings/`);
     return response.json();
   } catch (error) {
     console.error('API Error:', error);
@@ -369,14 +276,7 @@ export async function getTeamPicks(managerId: number, gameweek: number): Promise
   }
 
   try {
-    const response = await fetchWithFallback(`/entry/${managerId}/event/${gameweek}/picks/`);
-
-    if (!response.ok) {
-      throw new Error(
-        `Failed to fetch team picks for manager ${managerId}, gameweek ${gameweek}: ${response.status} ${response.statusText}`
-      );
-    }
-
+    const response = await fetchApi(`/entry/${managerId}/event/${gameweek}/picks/`);
     const data = await response.json() as TeamPicks;
     // Cache the data (2 minutes - team picks can change)
     setCachedData(cacheKey, data, CACHE_TTL.MANAGER);
