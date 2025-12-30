@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTeamContext } from '@/context/TeamContext';
 import { useAppContext } from '@/context/AppContext';
 import { getManagerHistory, getManagerTransfers, getBootstrapData } from '@/services/api';
@@ -32,6 +33,7 @@ const formatDate = (dateString: string): string => {
 };
 
 export function MyTeamPage() {
+  const navigate = useNavigate();
   const {
     managerId,
     managerInfo,
@@ -147,13 +149,21 @@ export function MyTeamPage() {
     <div>
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-3xl font-bold text-white">My Team</h1>
-        <button
-          onClick={refreshTeam}
-          disabled={isLoading}
-          className="rounded-md bg-violet-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-violet-600 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {isLoading ? 'Refreshing...' : 'Refresh Team'}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => navigate('/my-team/planner')}
+            className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700"
+          >
+            Fixture Planner
+          </button>
+          <button
+            onClick={refreshTeam}
+            disabled={isLoading}
+            className="rounded-md bg-violet-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-violet-600 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {isLoading ? 'Refreshing...' : 'Refresh Team'}
+          </button>
+        </div>
       </div>
 
       {managerInfo && <TeamOverview managerInfo={managerInfo} />}

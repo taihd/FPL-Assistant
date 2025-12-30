@@ -11,6 +11,7 @@ import { LeaguePage } from './modules/Leagues/LeaguePage';
 import { MyTeamPage } from './modules/MyTeam/MyTeamPage';
 import { PlayerDetailPage } from './modules/MyTeam/PlayerDetailPage';
 import { PlayerComparePage } from './modules/MyTeam/PlayerComparePage';
+import { FixturePlannerPage } from './modules/MyTeam/FixturePlannerPage';
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
               <Route path="/my-team" element={<MyTeamPage />} />
               <Route path="/my-team/player/:playerId" element={<PlayerDetailPage />} />
               <Route path="/my-team/compare" element={<PlayerComparePage />} />
+              <Route path="/my-team/planner" element={<FixturePlannerPage />} />
             </Routes>
           </Layout>
         </TeamProvider>
