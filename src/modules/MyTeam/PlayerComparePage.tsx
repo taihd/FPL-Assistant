@@ -356,16 +356,16 @@ function ComparisonTable({
         }
         case 'defconAverage': {
           const summary = playerSummaries.get(player.id);
-          if (!summary || summary.history.length === 0) return Infinity; // Use Infinity so N/A won't be highlighted
+          if (!summary || summary.history.length === 0) return -Infinity; // Use -Infinity so N/A won't be highlighted (higher is better)
           
           const gamesPlayed = summary.history.filter((h) => h.minutes > 0).length;
-          if (gamesPlayed === 0) return Infinity;
+          if (gamesPlayed === 0) return -Infinity;
 
           const hasDefConField = summary.history.some(
             (h) => h.defensive_contribution !== undefined
           );
           
-          if (!hasDefConField) return Infinity; // Use Infinity so N/A won't be highlighted (lower is better)
+          if (!hasDefConField) return -Infinity; // Use -Infinity so N/A won't be highlighted (higher is better)
 
           const totalDefCon = summary.history.reduce(
             (sum, h) => sum + (h.defensive_contribution || 0),
@@ -831,44 +831,6 @@ function ComparisonTable({
                   {player.clean_sheets}
                 </td>
               ))}
-            </tr>
-            <tr>
-              <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">
-                Defensive Contribution
-              </td>
-              {players.map((player, index) => {
-                const summary = playerSummaries.get(player.id);
-                let defensiveContribution = player.clean_sheets;
-                if (summary && summary.history.length > 0) {
-                  // Check if defensive_contribution field exists
-                  const hasDefConField = summary.history.some(
-                    (h) => h.defensive_contribution !== undefined
-                  );
-                  if (hasDefConField) {
-                    defensiveContribution = summary.history.reduce(
-                      (sum, h) => sum + (h.defensive_contribution || 0),
-                      0
-                    );
-                  } else {
-                    defensiveContribution = summary.history.reduce(
-                      (sum, h) => sum + h.clean_sheets,
-                      0
-                    );
-                  }
-                }
-                return (
-                  <td
-                    key={player.id}
-                    className={getCellClassName(
-                      'defensiveContribution',
-                      index,
-                      'whitespace-nowrap px-4 py-3 text-center text-sm text-slate-300'
-                    )}
-                  >
-                    {defensiveContribution}
-                  </td>
-                );
-              })}
             </tr>
             <tr>
               <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-white">

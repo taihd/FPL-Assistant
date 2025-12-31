@@ -50,8 +50,7 @@ export function isHigherBetter(statName: string): boolean {
     'goals_conceded',
     'expected_goals_conceded',
     'xdc',
-    'defconaverage',
-    'defcon_average',
+    // Note: defcon and defcon_average are NOT in this list because higher is better
   ];
   const statLower = statName.toLowerCase();
   return !lowerIsBetterStats.some((stat) => statLower.includes(stat));
